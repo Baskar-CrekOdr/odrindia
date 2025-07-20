@@ -63,9 +63,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
-
-  // ...existing code...
-
   const refreshPromiseRef = useRef<Promise<void> | null>(null);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
