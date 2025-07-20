@@ -88,6 +88,7 @@ function SignInClient() {
                   name: payload.name,
                   picture: payload.picture,
                 }),
+                credentials: 'include',
               });
               const data = await res.json();
               if (!res.ok) throw new Error(data.error || "Google sign-in failed");
