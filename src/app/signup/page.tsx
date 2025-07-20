@@ -167,15 +167,15 @@ const SignUpPage = () => {
                   name: payload.name,
                   picture: payload.picture,
                 }),
+                credentials: 'include',
               }
             );
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Google sign-up failed");
 
-            // Use the auth context login function to store user data and token
-            // Only pass token to login in development
-            if (process.env.NODE_ENV !== "development" && data.token) {
-              login(data.user, data.token);
+            // Use the auth context login function to store user data (no token)
+            if (data.user) {
+              login(data.user);
               router.push("/home");
             } else if (data.needsProfileCompletion) {
               const params = new URLSearchParams({
@@ -389,8 +389,8 @@ const SignUpPage = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          
         },
+        credentials: 'include',
         body: JSON.stringify({
           // Basic user info
           name: form.name,
@@ -458,15 +458,8 @@ const SignUpPage = () => {
 
       if (res.ok) {
         setSuccess("Registration successful!");
-        // Always set token in localStorage for immediate session
-        if (data.token) {
-          if (typeof window !== "undefined") {
-            localStorage.setItem("token", data.token);
-          }
-        }
-        // Always trigger login to update auth context and user state
-        if (login && data.token) {
-          login(data.user, data.token);
+        if (login && data.user) {
+          login(data.user);
         }
         setTimeout(() => {
           router.push("/home");

@@ -93,17 +93,14 @@ function SignInClient() {
               if (!res.ok) throw new Error(data.error || "Google sign-in failed");
 
               // Use the auth context login function to store user data and token
-              // Only pass token to login in development
-              if (process.env.NODE_ENV !== "production" && data.token) {
-                login(data.user, data.token);
-                router.push("/home");
-              } else if (data.user) {
+             
+              if (data.user) {
                 login(data.user);
                 router.push("/home");
               } else if (data.needsProfileCompletion) {
                 const params = new URLSearchParams({
                   email: payload.email,
-                  name: payload.name,
+                  name: payload.name, 
                   image: payload.picture || "",
                   fromGoogle: "true"
                 });
@@ -153,15 +150,15 @@ function SignInClient() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
+        credentials: 'include', // Always send cookies
       });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || 'Login failed');
       }
 
-      // Use the auth context login function to store user data and token
-      login(data.user, data.token);
-      
+      // Use the auth context login function to store user data (no token)
+      login(data.user);
       // Redirect to home page
       router.push("/home");
 
@@ -224,7 +221,7 @@ function SignInClient() {
   return (
     <div className="h-[70vh] flex flex-col lg:flex-row">
       {/* Mobile header for branding (shown on small screens) */}
-      <motion.div
+            <motion.div
         className="lg:hidden bg-gradient-to-r from-[#0a1e42] to-[#162d5a] px-4 py-6 text-center relative overflow-hidden"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
