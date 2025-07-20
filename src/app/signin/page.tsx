@@ -94,11 +94,8 @@ function SignInClient() {
               if (!res.ok) throw new Error(data.error || "Google sign-in failed");
 
               // Use the auth context login function to store user data and token
-             
-              if (data.user) {
-                login(data.user);
-                router.push("/home");
-              } else if (data.needsProfileCompletion) {
+              // If profile completion is needed, redirect immediately
+              if (data.needsProfileCompletion) {
                 const params = new URLSearchParams({
                   email: payload.email,
                   name: payload.name, 
@@ -106,6 +103,9 @@ function SignInClient() {
                   fromGoogle: "true"
                 });
                 router.push(`/complete-profile?${params.toString()}`);
+              } else if (data.user) {
+                login(data.user);
+                router.push("/home");
               }
             } catch (err: any) {
               setError(err.message || "Google sign-in failed");
