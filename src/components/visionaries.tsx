@@ -4,7 +4,8 @@ import React from 'react';
 
 interface Visionary {
   name: string;
-  title: string;
+  title: string; // Main title (bold)
+  subtitle?: string; // Subtitle (normal)
   imageUrl: string;
   alt: string;
   fallbackUrl?: string;
@@ -14,7 +15,8 @@ interface Visionary {
 const visionaries: Visionary[] = [
   {
     name: 'Ethan Katsh',
-    title: '<b>Father of ODR</b><br/> Founder of The National Center for Technology and Dispute Resolution',
+    title: 'Father of ODR',
+    subtitle: 'Founder of The National Center for Technology and Dispute Resolution',
     imageUrl: '/visionaries/ethan.jpg',
     fallbackUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/9c5f16be-c5c4-495d-b531-2414378234cf.png',
     alt: 'Portrait of Ethan Katsh, Father of ODR and Founder of The National Center for Technology and Dispute Resolution',
@@ -22,7 +24,8 @@ const visionaries: Visionary[] = [
   },
   {
     name: 'Collin Rule',
-    title: '<b>ODR Wizard</b>,<br/> CEO of ODR.COM',
+    title: 'ODR Wizard',
+    subtitle: 'CEO of ODR.COM',
     imageUrl: '/visionaries/collin.jpg',
     fallbackUrl: 'https://placehold.co/150x150?text=Image+Unavailable',
     alt: 'Portrait of Collin Rule, ODR Wizard and CEO of ODR.COM',
@@ -30,7 +33,8 @@ const visionaries: Visionary[] = [
   },
   {
     name: 'Chittu Nagarajan',
-    title: '<b>Global ODR Pioneer</b>,<br/> Co-Founder ODR.COM',
+    title: 'Global ODR Pioneer',
+    subtitle: 'Co-Founder ODR.COM',
     imageUrl: '/visionaries/chittu.png',
     fallbackUrl: 'https://placehold.co/150x150?text=Image+Unavailable',
     alt: 'Portrait of Chittu Nagarajan, Global ODR Pioneer and Co-Founder ODR.COM',
@@ -38,7 +42,8 @@ const visionaries: Visionary[] = [
   },
   {
     name: 'Leah Wing',
-    title: 'Director at The National Center for Technology and Dispute Resolution,<br/> Founding Board Member – ICODR',
+    title: 'Director at The National Center for Technology and Dispute Resolution',
+    subtitle: 'Founding Board Member – ICODR',
     imageUrl: '/visionaries/leah.jpg',
     fallbackUrl: 'https://placehold.co/150x150?text=Image+Unavailable',
     alt: 'Portrait of Leah Wing, Director of The National Center for Technology and Dispute Resolution and Founding Board Member – ICODR',
@@ -46,7 +51,8 @@ const visionaries: Visionary[] = [
   },
   {
     name: 'Amy J. Schmitz',
-    title: 'Professor at The Ohio State Moritz College of Law',
+    title: 'Professor',
+    subtitle: 'The Ohio State Moritz College of Law',
     imageUrl: '/visionaries/amy.jpg',
     fallbackUrl: 'https://placehold.co/150x150?text=Image+Unavailable',
     alt: 'Portrait of Amy J. Schmitz, Professor at The Ohio State Moritz College of Law',
@@ -54,7 +60,8 @@ const visionaries: Visionary[] = [
   },
   {
     name: 'Suman Kalani',
-    title: `Associate Professor<br/>SVKM&apos;s Pravin Gandhi College of Law`,
+    title: 'Associate Professor',
+    subtitle: `SVKM's Pravin Gandhi College of Law`,
     imageUrl: '/visionaries/suman.jpg',
     fallbackUrl: 'https://placehold.co/150x150?text=Image+Unavailable',
     alt: `Portrait of Suman Kalani, Associate Professor at SVKM's Pravin Gandhi College of Law, Mumbai, India`,
@@ -121,14 +128,12 @@ const VisionariesGallery: React.FC = () => {
             }}
           />
           <h3 className="name font-bold text-xl text-slate-800 text-center select-none">{v.name}</h3>
-          <p className="title font-medium text-base text-slate-600 text-center leading-tight select-none">
-            {v.title.split('\n').map((line, idx) => (
-              <React.Fragment key={idx}>
-                {line}
-                {idx < v.title.split('\n').length - 1 && <br />}
-              </React.Fragment>
-            ))}
-          </p>
+          <div className="flex flex-col items-center gap-1">
+            <span className="font-bold text-base text-slate-700 text-center select-none">{v.title}</span>
+            {v.subtitle && (
+              <span className="font-normal text-base text-slate-600 text-center select-none">{v.subtitle}</span>
+            )}
+          </div>
         </div>
       </div>
     </article>
