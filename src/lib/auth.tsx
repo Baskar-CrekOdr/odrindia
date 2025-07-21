@@ -128,11 +128,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
+    // Clear all user-related state
     setUser(null);
     setAccessToken(null);
+    // Clear any other session-related state if needed
     if (refreshTimeoutRef.current) {
       clearTimeout(refreshTimeoutRef.current);
       refreshTimeoutRef.current = null;
+    }
+    // Remove all user-related keys from localStorage/sessionStorage (defensive)
+    if (typeof window !== "undefined") {
+      try {
+        // Remove common user-related keys if present
+        [
+          'user',
+          'accessToken',
+          'refreshToken',
+          'csrfToken',
+          'profile',
+          'needsProfileCompletion',
+        ].forEach((key) => {
+          localStorage.removeItem(key);
+          sessionStorage.removeItem(key);
+        });
+        // Optionally clear all storage (uncomment if you want to wipe everything)
+        // localStorage.clear();
+        // sessionStorage.clear();
+      } catch {}
     }
     router.push("/signin");
   }, [router]);
