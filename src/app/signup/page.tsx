@@ -174,10 +174,11 @@ const SignUpPage = () => {
             if (!res.ok) throw new Error(data.error || "Google sign-up failed");
 
             // Use the auth context login function to store user data (no token)
-            if (data.user) {
-              login(data.user);
-              router.push("/home");
-            } else if (data.needsProfileCompletion) {
+            // if (data.user) {
+            //   login(data.user);
+            //   router.push("/home");
+            // } else 
+              if (data.needsProfileCompletion) {
               const params = new URLSearchParams({
                 email: payload.email,
                 name: payload.name,
@@ -185,6 +186,9 @@ const SignUpPage = () => {
                 fromGoogle: "true"
               });
               router.push(`/complete-profile?${params.toString()}`);
+            } else {
+              console.log("kuch toh gadbad hai");
+              router.push("/odrlabs");
             }
           } catch (err: any) {
             setError(err.message || "Google sign-up failed");
