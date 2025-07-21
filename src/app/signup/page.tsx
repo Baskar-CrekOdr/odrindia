@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
-import { initializeGoogleAuth, GoogleUser } from "@/lib/google-auth";
+import { initializeGoogleAuth } from "@/lib/google-auth";
+import { GoogleUser } from "@/types/auth";
 
 // Animation variants
 const fadeInUp = {

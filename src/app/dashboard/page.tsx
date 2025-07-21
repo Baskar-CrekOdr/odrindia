@@ -81,7 +81,14 @@ export default function Dashboard() {
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <UserAvatar 
-              user={user || undefined}
+              user={
+                user
+                  ? {
+                      name: user.name,
+                      imageAvatar: user.imageAvatar ?? undefined,
+                    }
+                  : undefined
+              }
               size="xl"
               className="h-20 w-20 border-4 border-white/20"
               fallbackClassName="bg-white/10 text-white text-xl font-semibold"

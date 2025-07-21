@@ -10,48 +10,31 @@ import React, {
   useRef,
 } from "react";
 import { useRouter } from "next/navigation";
-import { jwtDecode } from "jwt-decode";
 import { apiFetch } from "@/lib/api";
 import { fetchAndStoreCsrfToken } from "@/lib/csrf";
+import { 
+  User, 
+  AuthResponse, 
+  SessionResponse,
+  GoogleUser 
+} from "@/types/auth";
+import { 
+  storeUserSession, 
+  getUserSession, 
+  clearUserSession,
+  updateLastActivity 
+} from "@/lib/session";
 
 // Remove trailing slash to prevent double slashes in URLs
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api").replace(/\/$/, "");
 
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-  userRole: "INNOVATOR" | "MENTOR" | "ADMIN" | "OTHER";
-  hasMentorApplication?: boolean;
-  isMentorApproved?: boolean;
-  mentorRejectionReason?: string | null;
-  contactNumber?: string;
-  city?: string;
-  country?: string;
-  institution?: string;
-  highestEducation?: string;
-  odrLabUsage?: string;
-  imageAvatar?: string;
-  createdAt: string;
-  needsProfileCompletion?: boolean;
-}
-
-// This interface represents the API response structure
-interface GoogleSignInResponse {
-  user: User;
-  needsProfileCompletion: boolean; // This is calculated by the backend, not stored
-  token?: string; 
-  message: string;
-}
-
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  accessToken: string | null; // 
-  login: (userData: User, token?: string) => void;
+  login: (userData: User) => void;
   logout: () => void;
   signup: (userData: any) => Promise<any>;
-  signInWithGoogle: (googleUser: any) => Promise<GoogleSignInResponse>;
+  signInWithGoogle: (googleUser: GoogleUser) => Promise<AuthResponse>;
   refreshUser: () => Promise<void>;
   completeProfile: (profileData: any) => Promise<any>;
 }
@@ -61,7 +44,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
   const refreshPromiseRef = useRef<Promise<void> | null>(null);
@@ -77,6 +59,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     }
   }, []);
+
+  // Initialize user state from session storage on client mount
+  useEffect(() => {
+    if (isClient) {
+      const storedUser = getUserSession();
+      if (storedUser) {
+        setUser(storedUser);
+        updateLastActivity();
+      }
+      setLoading(false);
+    }
+  }, [isClient]);
 
   // Debounced refreshUser function to prevent race conditions
   const refreshUser = useCallback(async () => {
@@ -95,15 +89,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const response = await apiFetch(`/auth/session`);
         if (response.ok) {
-          const data = await response.json();
-          // Merge needsProfileCompletion if present
-          setUser(data.user ? { ...data.user, needsProfileCompletion: data.needsProfileCompletion } : null);
+          const data: SessionResponse = await response.json();
+          if (data.user) {
+            // Merge needsProfileCompletion if present
+            const userData = { 
+              ...data.user, 
+              needsProfileCompletion: data.needsProfileCompletion 
+            };
+            setUser(userData);
+            storeUserSession(userData);
+            updateLastActivity();
+          } else {
+            setUser(null);
+            clearUserSession();
+          }
         } else {
           setUser(null);
+          clearUserSession();
         }
       } catch (error) {
         console.error("Session refresh failed:", error);
         setUser(null);
+        clearUserSession();
       } finally {
         refreshTimeoutRef.current = setTimeout(() => {
           refreshPromiseRef.current = null;
@@ -114,48 +121,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return refreshPromiseRef.current;
   }, [isClient]);
 
-  // Initialize auth state only on client side
-  useEffect(() => {
-    if (isClient) {
-      refreshUser();
-    }
-  }, [refreshUser, isClient]);
-
-  const login = useCallback((userData: User & { needsProfileCompletion?: boolean }, token?: string) => {
+  const login = useCallback((userData: User) => {
     setUser(userData);
-    setAccessToken(null);
+    storeUserSession(userData);
+    updateLastActivity();
     setLoading(false);
   }, []);
 
   const logout = useCallback(() => {
     // Clear all user-related state
     setUser(null);
-    setAccessToken(null);
-    // Clear any other session-related state if needed
+    clearUserSession();
+    
+    // Clear any pending refresh operations
     if (refreshTimeoutRef.current) {
       clearTimeout(refreshTimeoutRef.current);
       refreshTimeoutRef.current = null;
     }
-    // Remove all user-related keys from localStorage/sessionStorage (defensive)
-    if (typeof window !== "undefined") {
-      try {
-        // Remove common user-related keys if present
-        [
-          'user',
-          'accessToken',
-          'refreshToken',
-          'csrfToken',
-          'profile',
-          'needsProfileCompletion',
-        ].forEach((key) => {
-          localStorage.removeItem(key);
-          sessionStorage.removeItem(key);
-        });
-        // Optionally clear all storage (uncomment if you want to wipe everything)
-        // localStorage.clear();
-        // sessionStorage.clear();
-      } catch {}
-    }
+    refreshPromiseRef.current = null;
+    
     router.push("/signin");
   }, [router]);
 
@@ -181,7 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const signInWithGoogle = useCallback(
-    async (googleUser: any): Promise<GoogleSignInResponse> => {
+    async (googleUser: GoogleUser): Promise<AuthResponse> => {
       try {
         const response = await apiFetch(`/auth/google-signin`, {
           method: "POST",
@@ -199,10 +183,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw new Error("Google sign-in failed");
         }
 
-        const data: GoogleSignInResponse = await response.json();
+        const data: AuthResponse = await response.json();
 
         // Always set user in context, include needsProfileCompletion
-        setUser(data.user ? { ...data.user, needsProfileCompletion: data.needsProfileCompletion } : null);
+        if (data.user) {
+          const userData = { 
+            ...data.user, 
+            needsProfileCompletion: data.needsProfileCompletion 
+          };
+          setUser(userData);
+          storeUserSession(userData);
+          updateLastActivity();
+        }
 
         return data;
       } catch (error) {
@@ -234,7 +226,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Update user data only, include needsProfileCompletion if present
         if (data.user) {
-          setUser({ ...data.user, needsProfileCompletion: data.needsProfileCompletion });
+          const userData = { 
+            ...data.user, 
+            needsProfileCompletion: data.needsProfileCompletion 
+          };
+          setUser(userData);
+          storeUserSession(userData);
+          updateLastActivity();
         }
 
         return data;
@@ -246,35 +244,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
-  // Decode JWT token to get user info
-  const getUserFromToken = (token: string): User | null => {
-    try {
-      // Decode JWT token
-      const decoded = jwtDecode<any>(token);
-      return {
-        id: decoded.id,
-        name: decoded.name,
-        email: decoded.email,
-        userRole: decoded.userRole as "INNOVATOR" | "MENTOR" | "ADMIN" | "OTHER",
-        isMentorApproved: decoded.isMentorApproved || false, // Include mentor approval status
-        contactNumber: decoded.contactNumber,
-        city: decoded.city,
-        country: decoded.country,
-        institution: decoded.institution,
-        highestEducation: decoded.highestEducation,
-        odrLabUsage: decoded.odrLabUsage,
-        imageAvatar: decoded.imageAvatar,
-        createdAt: decoded.createdAt,
-      };
-    } catch (error) {
-      return null;
-    }
-  };
-
   const value = {
     user,
     loading,
-    accessToken, // <-- Add this line
     login,
     logout,
     signup,

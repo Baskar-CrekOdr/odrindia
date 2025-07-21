@@ -1,4 +1,4 @@
-import { User } from './auth';
+import { User } from '@/types/auth';
 
 export const isMentorApproved = (user: User | null): boolean => {
   return !!user && user.userRole === "MENTOR" && !!user.isMentorApproved;
