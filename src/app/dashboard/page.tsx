@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { AlertCircle, User, Briefcase, Lightbulb, XCircle, Edit, MapPin, Building } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
@@ -9,7 +10,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import ProfileEditor from '@/components/profile/ProfileEditor';
 export default function Dashboard() {
+  // Use auth hook to get user data and refresh function
   const { user, refreshUser } = useAuth();
+  const router = useRouter();
+  // Redirect to complete-profile if user needs to complete profile
+  useEffect(() => {
+    if (user && user.needsProfileCompletion) {
+      router.replace('/complete-profile');
+    }
+  }, [user, router]);
   const [loading, setLoading] = useState(false);
   const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
   const [stats, setStats] = useState({

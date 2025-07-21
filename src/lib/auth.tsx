@@ -24,7 +24,7 @@ export type User = {
   userRole: "INNOVATOR" | "MENTOR" | "ADMIN" | "OTHER";
   hasMentorApplication?: boolean;
   isMentorApproved?: boolean;
-  mentorRejectionReason?: string | null; // Add this field to store rejection reason
+  mentorRejectionReason?: string | null;
   contactNumber?: string;
   city?: string;
   country?: string;
@@ -33,6 +33,7 @@ export type User = {
   odrLabUsage?: string;
   imageAvatar?: string;
   createdAt: string;
+  needsProfileCompletion?: boolean;
 }
 
 // This interface represents the API response structure
@@ -95,7 +96,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const response = await apiFetch(`/auth/session`);
         if (response.ok) {
           const data = await response.json();
-          setUser(data.user);
+          // Merge needsProfileCompletion if present
+          setUser(data.user ? { ...data.user, needsProfileCompletion: data.needsProfileCompletion } : null);
         } else {
           setUser(null);
         }
@@ -119,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [refreshUser, isClient]);
 
-  const login = useCallback((userData: User, token?: string) => {
+  const login = useCallback((userData: User & { needsProfileCompletion?: boolean }, token?: string) => {
     setUser(userData);
     setAccessToken(null);
     setLoading(false);
@@ -177,10 +179,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const data: GoogleSignInResponse = await response.json();
 
-        // Always set user in context
-        setUser(data.user);
-
-        // No more token handling, just set user
+        // Always set user in context, include needsProfileCompletion
+        setUser(data.user ? { ...data.user, needsProfileCompletion: data.needsProfileCompletion } : null);
 
         return data;
       } catch (error) {
@@ -210,9 +210,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const data = await response.json();
 
-        // Update user data only
+        // Update user data only, include needsProfileCompletion if present
         if (data.user) {
-          setUser(data.user);
+          setUser({ ...data.user, needsProfileCompletion: data.needsProfileCompletion });
         }
 
         return data;
