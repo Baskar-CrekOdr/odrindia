@@ -128,7 +128,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      // Call the server logout endpoint to clear server-side cookies
+      await apiFetch(`/auth/logout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error) {
+      // Even if the server call fails, we should still clear client state
+      console.error("Server logout failed, clearing client state anyway:", error);
+    }
+    
     // Clear all user-related state
     setUser(null);
     clearUserSession();
