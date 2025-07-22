@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 import GoogleScriptLoader from "@/components/GoogleScriptLoader";
@@ -21,11 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Remove duplicate Google OAuth Script */}
-        {/* <Script
+        <Script
           src="https://accounts.google.com/gsi/client"
           strategy="afterInteractive"
-        /> */}
+        />
       </head>
       <body className={inter.className}>
         <AuthProvider>
