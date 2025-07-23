@@ -389,7 +389,7 @@ function CompleteProfileClient() {
         };
       }
 
-      console.log("Submitting profile data:", profileData);
+      //console.log("Submitting profile data:", profileData);
 
       const result = await completeProfile(profileData);
 
