@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
-import { initializeGoogleAuth, GoogleUser } from "@/lib/google-auth";
+import { initializeGoogleAuth } from "@/lib/google-auth";
+import { GoogleUser } from "@/types/auth";
 
 // Animation variants
 const fadeInUp = {
@@ -167,17 +168,18 @@ const SignUpPage = () => {
                   name: payload.name,
                   picture: payload.picture,
                 }),
+                credentials: 'include',
               }
             );
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Google sign-up failed");
 
-            // Use the auth context login function to store user data and token
-            // Only pass token to login in development
-            if (process.env.NODE_ENV !== "development" && data.token) {
-              login(data.user, data.token);
-              router.push("/home");
-            } else if (data.needsProfileCompletion) {
+            // Use the auth context login function to store user data (no token)
+            // if (data.user) {
+            //   login(data.user);
+            //   router.push("/home");
+            // } else 
+              if (data.needsProfileCompletion) {
               const params = new URLSearchParams({
                 email: payload.email,
                 name: payload.name,
@@ -185,6 +187,9 @@ const SignUpPage = () => {
                 fromGoogle: "true"
               });
               router.push(`/complete-profile?${params.toString()}`);
+            } else {
+              console.log("kuch toh gadbad hai");
+              router.push("/odrlabs");
             }
           } catch (err: any) {
             setError(err.message || "Google sign-up failed");
@@ -389,8 +394,8 @@ const SignUpPage = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          
         },
+        credentials: 'include',
         body: JSON.stringify({
           // Basic user info
           name: form.name,
@@ -458,15 +463,8 @@ const SignUpPage = () => {
 
       if (res.ok) {
         setSuccess("Registration successful!");
-        // Always set token in localStorage for immediate session
-        if (data.token) {
-          if (typeof window !== "undefined") {
-            localStorage.setItem("token", data.token);
-          }
-        }
-        // Always trigger login to update auth context and user state
-        if (login && data.token) {
-          login(data.user, data.token);
+        if (login && data.user) {
+          login(data.user);
         }
         setTimeout(() => {
           router.push("/home");

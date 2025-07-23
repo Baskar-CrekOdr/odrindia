@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { AlertCircle, User, Briefcase, Lightbulb, XCircle, Edit, MapPin, Building } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
@@ -9,7 +10,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import ProfileEditor from '@/components/profile/ProfileEditor';
 export default function Dashboard() {
+  // Use auth hook to get user data and refresh function
   const { user, refreshUser } = useAuth();
+  const router = useRouter();
+  // Redirect to complete-profile if user needs to complete profile
+  useEffect(() => {
+    if (user && user.needsProfileCompletion) {
+      router.replace('/complete-profile');
+    }
+  }, [user, router]);
   const [loading, setLoading] = useState(false);
   const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
   const [stats, setStats] = useState({
@@ -18,30 +27,39 @@ export default function Dashboard() {
     mentorshipsCount: 0
   });
 
+
+  // Show error messages from profile update or stats fetch
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   const handleProfileUpdate = async () => {
-    await refreshUser();
+    try {
+      await refreshUser();
+      setErrorMsg(null);
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Failed to update profile");
+    }
   };
 
   useEffect(() => {
     const fetchUserStats = async () => {
       try {
         setLoading(true);
+        setErrorMsg(null);
         const response = await apiFetch('/user/stats');
-        
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
+          setErrorMsg(errorData.error || `Failed with status: ${response.status}`);
           throw new Error(errorData.error || `Failed with status: ${response.status}`);
         }
-        
         const data = await response.json();
         setStats(data);
-      } catch (error) {
+      } catch (error: any) {
+        setErrorMsg(error?.message || 'Failed to fetch user stats.');
         console.error('Failed to fetch user stats:', error);
       } finally {
         setLoading(false);
       }
     };
-
     if (user?.id) {
       fetchUserStats();
     }
@@ -49,12 +67,28 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-5xl mx-auto p-5 space-y-6">
+      {/* Show error message if present */}
+      {errorMsg && (
+        <div className="mb-4">
+          <div className="flex items-center gap-2 bg-red-100 border border-red-300 text-red-800 rounded px-4 py-2">
+            <AlertCircle className="w-5 h-5" />
+            <span>{errorMsg}</span>
+          </div>
+        </div>
+      )}
       {/* Profile Header Section */}
       <Card className="border-none shadow-sm bg-gradient-to-r from-[#0a1e42] to-[#3a86ff]">
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <UserAvatar 
-              user={user || undefined}
+              user={
+                user
+                  ? {
+                      name: user.name,
+                      imageAvatar: user.imageAvatar ?? undefined,
+                    }
+                  : undefined
+              }
               size="xl"
               className="h-20 w-20 border-4 border-white/20"
               fallbackClassName="bg-white/10 text-white text-xl font-semibold"

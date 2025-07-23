@@ -4,8 +4,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth";
-import { initializeGoogleAuth, renderGoogleButton, GoogleUser } from "@/lib/google-auth";
+import { initializeGoogleAuth, renderGoogleButton } from "@/lib/google-auth";
 import { apiFetch } from "@/lib/api";
+import { GoogleUser } from "@/types/auth";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -151,15 +152,15 @@ function SignInClient() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
+        credentials: 'include', // Always send cookies
       });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || 'Login failed');
       }
 
-      // Use the auth context login function to store user data and token
-      login(data.user, data.token);
-      
+      // Use the auth context login function to store user data
+      login(data.user);
       // Redirect to home page
       router.push("/home");
 
@@ -177,7 +178,7 @@ function SignInClient() {
       setLoading(true);
       setError(null);
 
-      // Initialize Google Auth
+      // Initialize Google Auth using unified utilities
       await initializeGoogleAuth(async (googleUser: GoogleUser) => {
         try {
           // Validate email and name
@@ -222,7 +223,7 @@ function SignInClient() {
   return (
     <div className="h-[70vh] flex flex-col lg:flex-row">
       {/* Mobile header for branding (shown on small screens) */}
-      <motion.div
+            <motion.div
         className="lg:hidden bg-gradient-to-r from-[#0a1e42] to-[#162d5a] px-4 py-6 text-center relative overflow-hidden"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

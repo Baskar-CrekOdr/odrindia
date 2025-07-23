@@ -6,20 +6,18 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { withAuth } from "@/lib/auth";
-import { useAuth } from "@/lib/auth";
+
+
 
 function OdrLabsClientComponent() {
   const [ideas, setIdeas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { accessToken } = useAuth();
 
   useEffect(() => {
     const fetchIdeas = async () => {
       try {
-        // Let apiFetch handle credentials/cookies for authentication
         const response = await apiFetch("/odrlabs/ideas");
-
         if (!response.ok) {
           if (response.status === 401) {
             setError("You need to be logged in to view ideas.");
@@ -29,7 +27,6 @@ function OdrLabsClientComponent() {
           }
           throw new Error("Failed to fetch ideas");
         }
-
         const data = await response.json();
         setIdeas(data.ideas || []);
       } catch (err) {

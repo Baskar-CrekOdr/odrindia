@@ -6,10 +6,10 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 interface PageGuardProps {
   children: ReactNode;
-  requiredRole?: "ADMIN" | "MENTOR" | "INNOVATOR" | "OTHER";
+  requiredRole?: "ADMIN" | "MENTOR" | "INNOVATOR" | "OTHER" | "FACULTY";
   requireAuth?: boolean;
   redirectTo?: string;
-  allowedRoles?: ("ADMIN" | "MENTOR" | "INNOVATOR" | "OTHER")[];
+  allowedRoles?: ("ADMIN" | "MENTOR" | "INNOVATOR" | "OTHER" | "FACULTY")[];
   checkPermission?: (user: unknown) => boolean | Promise<boolean>;
 }
 

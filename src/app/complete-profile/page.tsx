@@ -133,7 +133,6 @@ function CompleteProfileClient() {
     if (
       !loading &&
       user &&
-      localStorage.getItem("token") &&
       user.contactNumber &&
       user.city &&
       user.country &&

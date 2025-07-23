@@ -5,16 +5,16 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  userRole: "INNOVATOR" | "MENTOR" | "ADMIN" | "OTHER";
+  userRole: "INNOVATOR" | "MENTOR" | "ADMIN" | "OTHER" | "FACULTY";
   hasMentorApplication?: boolean;
   isMentorApproved?: boolean;
   mentorRejectionReason?: string | null;
-  contactNumber?: string;
-  city?: string;
-  country?: string;
-  institution?: string;
-  highestEducation?: string;
-  odrLabUsage?: string;
+  contactNumber?: string | null;
+  city?: string | null;
+  country?: string | null;
+  institution?: string | null;
+  highestEducation?: string | null;
+  odrLabUsage?: string | null;
   createdAt?: string;
 }
 
