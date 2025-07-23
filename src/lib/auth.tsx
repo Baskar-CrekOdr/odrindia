@@ -77,6 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Only run on client side
     if (!isClient) return;
 
+    // Prevent multiple concurrent refresh attempts
     if (refreshPromiseRef.current) {
       return refreshPromiseRef.current;
     }
@@ -100,18 +101,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             storeUserSession(userData);
             updateLastActivity();
           } else {
+            // Clear user state if session is invalid
             setUser(null);
             clearUserSession();
           }
         } else {
+          // Clear user state on auth failure
           setUser(null);
           clearUserSession();
         }
       } catch (error) {
         console.error("Session refresh failed:", error);
-        setUser(null);
-        clearUserSession();
+        // Only clear user state if it's a network error, not auth error
+        if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+          console.warn("Network error during session refresh, keeping current user state");
+        } else {
+          setUser(null);
+          clearUserSession();
+        }
       } finally {
+        // Reset refresh promise after a delay to allow new refresh attempts
         refreshTimeoutRef.current = setTimeout(() => {
           refreshPromiseRef.current = null;
         }, 2000);
