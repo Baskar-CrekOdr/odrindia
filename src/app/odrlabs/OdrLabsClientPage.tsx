@@ -21,9 +21,7 @@ function OdrLabsClientComponent() {
         if (!response.ok) {
           if (response.status === 401) {
             setError("You need to be logged in to view ideas.");
-            window.location.href = "/signin"; // Redirect to sign-in page
             return;
-
           }
           throw new Error("Failed to fetch ideas");
         }
@@ -36,8 +34,6 @@ function OdrLabsClientComponent() {
         setLoading(false);
       }
     };
-
-    // Always fetch ideas; authentication is handled via HTTP-only cookies
     fetchIdeas();
   }, []);
 
