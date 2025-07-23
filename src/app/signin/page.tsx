@@ -96,7 +96,7 @@ function SignInClient() {
               // Use the auth context login function to store user data and token
               // Only pass token to login in development
               if (process.env.NODE_ENV !== "production" && data.token) {
-                login(data.user, data.token);
+                login(data.user);
                 router.push("/home");
               
               } else if (data.needsProfileCompletion) {
