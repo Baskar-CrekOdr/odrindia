@@ -56,11 +56,11 @@ export default function DiscussionClient({ idea: initialIdea, initialComments }:
       const checkLikeStatus = async () => {
         try {
           // Check idea like status
-          const ideaLiked = await checkIdeaLikeStatus(idea.id, user.id)
+          const ideaLiked = await checkIdeaLikeStatus(idea.id)
           setHasLiked(ideaLiked)
           
           // Check comment likes
-          const likedComments = await fetchLikedComments(idea.id, user.id)
+          const likedComments = await fetchLikedComments(idea.id)
           const likedCommentsMap: Record<string, boolean> = {}
           likedComments.forEach((commentId: string) => {
             likedCommentsMap[commentId] = true

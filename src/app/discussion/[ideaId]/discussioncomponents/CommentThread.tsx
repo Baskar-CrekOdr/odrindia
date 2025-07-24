@@ -99,13 +99,13 @@ export default function CommentThread({
                   }`}>
                   <ThumbsUp className="h-4 w-4" />
                   <span>
-                    {comment.likes + (commentLikes[comment.id] ? 1 : 0)}
+                    {Array.isArray(comment.likes) ? comment.likes.length : (comment.likes || 0)}
                   </span>
                 </button>
               ) : (
                 <div className="flex items-center gap-1 text-sm text-gray-500">
                   <ThumbsUp className="h-4 w-4" />
-                  <span>{comment.likes}</span>
+                  <span>{Array.isArray(comment.likes) ? comment.likes.length : (comment.likes || 0)}</span>
                 </div>
               )}
 

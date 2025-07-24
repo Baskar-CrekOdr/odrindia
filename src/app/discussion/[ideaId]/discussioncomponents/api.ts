@@ -56,9 +56,9 @@ export async function fetchComments(ideaId: string | null, accessToken?: string 
 }
 
 // Check if user has liked an idea
-export async function checkIdeaLikeStatus(ideaId: string, userId: string, accessToken?: string | null): Promise<boolean> {
+export async function checkIdeaLikeStatus(ideaId: string): Promise<boolean> {
   try {
-    const res = await apiFetch(`/ideas/${ideaId}/likes/check?userId=${userId}`);
+    const res = await apiFetch(`/ideas/${ideaId}/likes/check`);
     
     if (!res.ok) {
       if (res.status === 401) {
@@ -76,9 +76,9 @@ export async function checkIdeaLikeStatus(ideaId: string, userId: string, access
 }
 
 // Fetch liked comments for a user
-export async function fetchLikedComments(ideaId: string, userId: string, accessToken?: string | null): Promise<string[]> {
+export async function fetchLikedComments(ideaId: string): Promise<string[]> {
   try {
-    const res = await apiFetch(`/ideas/${ideaId}/comments/liked?userId=${userId}`);
+    const res = await apiFetch(`/ideas/${ideaId}/comments/liked`);
     
     if (!res.ok) {
       if (res.status === 401) {
