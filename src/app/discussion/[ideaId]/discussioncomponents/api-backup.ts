@@ -101,7 +101,7 @@ export async function likeIdea(ideaId: string, userId: string, action: 'like' | 
     const res = await apiFetch(`/ideas/${ideaId}/likes`, {
       method: 'POST',
       headers: createAuthHeaders(accessToken),
-      body: JSON.stringify({ userId, action })
+      body: JSON.stringify({ action }) // Remove userId - backend uses authenticated user from JWT
     });
     
     if (!res.ok) {
@@ -124,7 +124,7 @@ export async function likeComment(ideaId: string, commentId: string, userId: str
     const res = await apiFetch(`/ideas/${ideaId}/comments/${commentId}/likes`, {
       method: 'POST',
       headers: createAuthHeaders(accessToken),
-      body: JSON.stringify({ userId, action })
+      body: JSON.stringify({ action }) // Remove userId - backend uses authenticated user from JWT
     });
     
     if (!res.ok) {

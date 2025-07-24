@@ -96,16 +96,20 @@ export async function fetchLikedComments(ideaId: string, userId: string, accessT
 }
 
 // Like or unlike an idea
-export async function likeIdea(ideaId: string, userId: string, action: 'like' | 'unlike', accessToken?: string | null) {
+export async function likeIdea(ideaId: string, action: 'like' | 'unlike'): Promise<{ liked: boolean; likes: number }> {
   try {
     const res = await apiFetch(`/ideas/${ideaId}/likes`, {
       method: 'POST',
-      body: JSON.stringify({ userId, action }),
+      body: JSON.stringify({ action }),
     });
     
     if (!res.ok) {
       if (res.status === 401) {
         throw new Error('Authentication failed. Please log in again.');
+      }
+      if (res.status === 400) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Invalid action');
       }
       throw new Error('Failed to update like');
     }
@@ -118,16 +122,20 @@ export async function likeIdea(ideaId: string, userId: string, action: 'like' | 
 }
 
 // Like or unlike a comment
-export async function likeComment(ideaId: string, commentId: string, userId: string, action: 'like' | 'unlike', accessToken?: string | null) {
+export async function likeComment(ideaId: string, commentId: string, action: 'like' | 'unlike'): Promise<{ liked: boolean; likes: number }> {
   try {
     const res = await apiFetch(`/ideas/${ideaId}/comments/${commentId}/likes`, {
       method: 'POST',
-      body: JSON.stringify({ userId, action }),
+      body: JSON.stringify({ action }),
     });
     
     if (!res.ok) {
       if (res.status === 401) {
         throw new Error('Authentication failed. Please log in again.');
+      }
+      if (res.status === 400) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Invalid action');
       }
       throw new Error('Failed to update comment like');
     }
@@ -140,7 +148,7 @@ export async function likeComment(ideaId: string, commentId: string, userId: str
 }
 
 // Post a comment
-export async function postComment(ideaId: string, userId: string, content: string, parentId?: string, accessToken?: string | null) {
+export async function postComment(ideaId: string, content: string, parentId?: string): Promise<Comment> {
   try {
     const res = await apiFetch(`/ideas/${ideaId}/comments`, {
       method: 'POST',
