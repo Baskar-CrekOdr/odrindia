@@ -32,7 +32,7 @@ export default function DiscussionClient({ idea: initialIdea, initialComments }:
   const [comments, setComments] = useState<Comment[]>(initialComments)
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({})
-  const [ideaLikes, setIdeaLikes] = useState(initialIdea.likes)
+  const [ideaLikes, setIdeaLikes] = useState(initialIdea.likes || 0)
   const [hasLiked, setHasLiked] = useState(false)
   const [commentLikes, setCommentLikes] = useState<Record<string, boolean>>({})
 
