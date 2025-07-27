@@ -133,12 +133,13 @@ function CompleteProfileClient() {
     if (
       !loading &&
       user &&
-      localStorage.getItem("token") &&
       user.contactNumber &&
       user.city &&
       user.country &&
-      fromGoogle !== "true"
+      fromGoogle !== "true" &&
+      !user.needsProfileCompletion
     ) {
+      console.log("User profile complete, redirecting to home");
       router.push("/home");
       return;
     }
@@ -390,7 +391,7 @@ function CompleteProfileClient() {
         };
       }
 
-      console.log("Submitting profile data:", profileData);
+      //console.log("Submitting profile data:", profileData);
 
       const result = await completeProfile(profileData);
 
@@ -402,8 +403,13 @@ function CompleteProfileClient() {
 
       // Redirect to intended page or home
       const redirectTo = searchParams?.get("redirect") || "/home";
+      
+      // Add a small delay to ensure the auth state is updated
       setTimeout(() => {
-        router.push(redirectTo);
+        // Check if we're still on the complete-profile page to avoid redirect loops
+        if (window.location.pathname === "/complete-profile") {
+          router.push(redirectTo);
+        }
       }, 1500);
 
     } catch (err) {

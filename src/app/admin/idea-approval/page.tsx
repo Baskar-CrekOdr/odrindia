@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
-import { apiFetch } from "@/lib/api";
+import adminService from "@/lib/adminService";
 
 interface User {
   id: string;
@@ -88,22 +88,23 @@ function AdminIdeaApprovalContent() {
   const fetchSubmissions = useCallback(async () => {
     setLoading(true);
     try {
-      console.log("Fetching idea submissions...");
-      const res = await apiFetch("/admin/approve-idea");
-      console.log("Response status:", res.status);
-      
-      if (!res.ok) {
-        console.error("Response not OK:", res.status, res.statusText);
-        throw new Error(`Failed to fetch submissions: ${res.status} ${res.statusText}`);
-      }
-      
-      const data = await res.json();
-      console.log("Submissions fetched:", data.length);
+      const data = await adminService.getPendingIdeas();
       setSubmissions(data);
       setFilteredSubmissions(data);
     } catch (error) {
-      console.error("Error fetching submissions:", error);
-      toast.error("Failed to load idea submissions. Please try again.");
+      let errorMessage = 'Failed to load idea submissions. ';
+      if (error instanceof Error) {
+        if (error.message.includes('Authentication')) {
+          errorMessage += 'Session expired. Please log in again.';
+        } else if (error.message.includes('CSRF')) {
+          errorMessage += 'Security error. Please refresh the page.';
+        } else if (error.message.includes('Network')) {
+          errorMessage += 'Network error. Please check your connection.';
+        } else {
+          errorMessage += error.message;
+        }
+      }
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -166,31 +167,26 @@ function AdminIdeaApprovalContent() {
   const approveIdea = async (id: string) => {
     setApproving(id);
     try {
-      console.log("Approving idea with ID:", id);
-      const res = await apiFetch("/admin/approve-idea", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ideaId: id }),
-      });
-
-      console.log("Approve response status:", res.status);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to approve idea");
-      }
-
-      // Update local state
+      await adminService.approveIdea(id);
       setSubmissions((subs) => subs.filter((s) => s.id !== id));
-
-      // Close dialog if open
       if (isDetailsOpen && selectedSubmission?.id === id) {
         closeDetailsDialog();
       }
-
       toast.success("The idea has been approved and is now live on the ODR Lab page.");
     } catch (error) {
-      console.error("Error approving idea:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to approve idea. Please try again.");
+      let errorMessage = 'Failed to approve idea. ';
+      if (error instanceof Error) {
+        if (error.message.includes('Authentication')) {
+          errorMessage += 'Session expired. Please log in again.';
+        } else if (error.message.includes('CSRF')) {
+          errorMessage += 'Security error. Please refresh the page.';
+        } else if (error.message.includes('Network')) {
+          errorMessage += 'Network error. Please check your connection.';
+        } else {
+          errorMessage += error.message;
+        }
+      }
+      toast.error(errorMessage);
     } finally {
       setApproving(null);
     }
@@ -508,7 +504,7 @@ function AdminIdeaApprovalContent() {
       <Dialog
         open={isDetailsOpen}
         onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="sm:max-w-2xl p-0 overflow-hidden rounded-xl">
+        <DialogContent className="sm:max-w-2xl p-0 overflow-hidden rounded-xl" >
           {selectedSubmission && (
             <>
               <DialogHeader className="p-6 pb-2 bg-gradient-to-r from-[#0a1e42]/90 to-[#0a1e42] text-white">

@@ -6,30 +6,18 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { withAuth } from "@/lib/auth";
-import { useAuth } from "@/lib/auth";
+
+
 
 function OdrLabsClientComponent() {
   const [ideas, setIdeas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { accessToken } = useAuth();
 
   useEffect(() => {
     const fetchIdeas = async () => {
       try {
-        // Include the authorization header with the token
-        const headers: HeadersInit = {
-          "Content-Type": "application/json",
-        };
-
-        if (accessToken) {
-          headers["Authorization"] = `Bearer ${accessToken}`;
-        }
-
-        const response = await apiFetch("/odrlabs/ideas", {
-          headers,
-        });
-
+        const response = await apiFetch("/odrlabs/ideas");
         if (!response.ok) {
           if (response.status === 401) {
             setError("You need to be logged in to view ideas.");
@@ -37,7 +25,6 @@ function OdrLabsClientComponent() {
           }
           throw new Error("Failed to fetch ideas");
         }
-
         const data = await response.json();
         setIdeas(data.ideas || []);
       } catch (err) {
@@ -47,22 +34,8 @@ function OdrLabsClientComponent() {
         setLoading(false);
       }
     };
-
-    // Only fetch if we have a token
-    if (accessToken) {
-      fetchIdeas();
-    } else {
-      // Short delay to allow auth to initialize
-      const timer = setTimeout(() => {
-        if (!accessToken) {
-          setLoading(false);
-          setError("Authentication required to view ideas.");
-        }
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [accessToken]);
+    fetchIdeas();
+  }, []);
 
   return loading ? (
     <div className="flex justify-center items-center h-96">

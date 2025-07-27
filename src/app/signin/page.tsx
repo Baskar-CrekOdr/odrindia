@@ -4,7 +4,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth";
-import { initializeGoogleAuth, renderGoogleButton, GoogleUser } from "@/lib/google-auth";
+import { initializeGoogleAuth, renderGoogleButton } from "@/lib/google-auth";
+import { apiFetch } from "@/lib/api";
+import { GoogleUser } from "@/types/auth";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,83 +50,6 @@ function SignInClient() {
     }
   }, []);
 
-  // If you need to load an external script, do it like this:
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.onload = () => {
-      // Google API loaded, render the Google button if needed
-      const container = document.getElementById("google-signin-container");
-      if (window.google && window.google.accounts && container) {
-        window.google.accounts.id.initialize({
-          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "",
-          callback: async (response: any) => {
-            // Decode the JWT credential from Google
-            const credential = response.credential;
-            if (!credential) return;
-
-            // Decode JWT to get user info (email, name, picture)
-            const base64Url = credential.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(
-              atob(base64)
-                .split('')
-                .map(function(c) {
-                  return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                })
-                .join('')
-            );
-            const payload = JSON.parse(jsonPayload);
-
-            // Send user info to backend for sign-in/up
-            try {
-              const res = await fetch(`${API_BASE_URL}/auth/google-signin`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  email: payload.email,
-                  name: payload.name,
-                  picture: payload.picture,
-                }),
-              });
-              const data = await res.json();
-              if (!res.ok) throw new Error(data.error || "Google sign-in failed");
-
-              // Use the auth context login function to store user data and token
-              if (data.token) {
-                login(data.user, data.token);
-                router.push("/home");
-              } else if (data.needsProfileCompletion) {
-                const params = new URLSearchParams({
-                  email: payload.email,
-                  name: payload.name,
-                  image: payload.picture || "",
-                  fromGoogle: "true"
-                });
-                router.push(`/complete-profile?${params.toString()}`);
-              }
-            } catch (err: any) {
-              setError(err.message || "Google sign-in failed");
-            }
-          },
-        });
-        window.google.accounts.id.renderButton(container, {
-          theme: "outline",
-          size: "large",
-          text: "signin_with",
-        });
-      }
-    };
-    document.body.appendChild(script);
-    return () => {
-      // Only remove if the script is still present in the DOM
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-    };
-  }, []);
-
   // Handle form submission for email/password login
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -142,23 +67,21 @@ function SignInClient() {
 
     try {
       // Call the login API endpoint
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await apiFetch("/auth/login", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
+        credentials: 'include', // Always send cookies
       });
-
       const data = await response.json();
-
       if (!response.ok) {
         throw new Error(data.error || 'Login failed');
       }
 
-      // Use the auth context login function to store user data and token
-      login(data.user, data.token);
-      
+      // Use the auth context login function to store user data
+      login(data.user);
       // Redirect to home page
       router.push("/home");
 
@@ -176,7 +99,7 @@ function SignInClient() {
       setLoading(true);
       setError(null);
 
-      // Initialize Google Auth
+      // Initialize Google Auth using unified utilities
       await initializeGoogleAuth(async (googleUser: GoogleUser) => {
         try {
           // Validate email and name
@@ -221,7 +144,7 @@ function SignInClient() {
   return (
     <div className="h-[70vh] flex flex-col lg:flex-row">
       {/* Mobile header for branding (shown on small screens) */}
-      <motion.div
+            <motion.div
         className="lg:hidden bg-gradient-to-r from-[#0a1e42] to-[#162d5a] px-4 py-6 text-center relative overflow-hidden"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

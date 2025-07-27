@@ -51,7 +51,7 @@ export async function getAllMentors(): Promise<MentorWithIdeas[]> {
     }
     
     const data = await response.json();
-    console.log("Mentors API response:", data);
+    // console.log("Mentors API response:", data);
     
     // Process mentors to include all needed fields and handle field name discrepancies
     if (data.mentors && Array.isArray(data.mentors)) {

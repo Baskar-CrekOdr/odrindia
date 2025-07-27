@@ -1,6 +1,5 @@
 "use client"
 import "../globals.css"
-import { motion } from "framer-motion"
 import ResponsiveHowToCard from "@/components/ResponsiveHowToCard"
 import { LetsCollaborate } from "@/components/letscolaborate"
 import { HeroSection } from "@/components/hero-section"

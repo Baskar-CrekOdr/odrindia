@@ -31,7 +31,7 @@ export default function CommentForm({
       toast.error("Failed to post comment.");
     }
   };
-  console.log("idea", ideaId);
+  
   return (
     <div className="mb-6 flex gap-3">
       <Avatar className="h-10 w-10">

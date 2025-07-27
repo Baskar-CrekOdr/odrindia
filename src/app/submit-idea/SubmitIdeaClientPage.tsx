@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ideaSubmissionSchema } from "./ideaSchema";
 import { saveSubmissionRecord } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
+import { fetchAndStoreCsrfToken } from "@/lib/csrf";
 
 // Animation variants
 const fadeInUp = {
@@ -91,6 +92,9 @@ export default function SubmitIdeaClientPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    // Always ensure CSRF token is present before submitting
+    await fetchAndStoreCsrfToken();
+
     // Client-side Zod validation
     const parsed = ideaSubmissionSchema.safeParse(formData);
     if (!parsed.success) {
@@ -117,10 +121,9 @@ export default function SubmitIdeaClientPage() {
       // Map frontend field names to what the backend expects
       const mappedData = {
         title: formData.title,
-        caption: formData.idea_caption, // Map to backend field name
+        caption: formData.idea_caption, // backend expects 'caption'
         description: formData.description,
-        priorOdrExperience: formData.odr_experience, // Map to backend field name
-        consent: formData.consent,
+        priorOdrExperience: formData.odr_experience, // backend expects 'priorOdrExperience'
       };
 
       const response = await apiFetch("/ideas/submit", {
@@ -140,7 +143,7 @@ export default function SubmitIdeaClientPage() {
           });
           return;
         }
-
+        console.error("Server validation error:", responseData);
         throw new Error(responseData.message || "Failed to submit idea");
       }
 

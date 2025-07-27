@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
-import { initializeGoogleAuth, GoogleUser } from "@/lib/google-auth";
+import { initializeGoogleAuth } from "@/lib/google-auth";
+import { GoogleUser } from "@/types/auth";
 
 // Animation variants
 const fadeInUp = {
@@ -157,8 +158,8 @@ const SignUpPage = () => {
           try {
             setLoading(true);
             setError(null);
-            const res = await fetch(
-              `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api"}/auth/google-signin`,
+            const res = await apiFetch(
+              "/auth/google-signin",
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -167,16 +168,28 @@ const SignUpPage = () => {
                   name: payload.name,
                   picture: payload.picture,
                 }),
+                credentials: 'include',
               }
             );
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Google sign-up failed");
 
-            // Use the auth context login function to store user data and token
-            if (data.token) {
-              login(data.user, data.token);
-              router.push("/home");
-            } else if (data.needsProfileCompletion) {
+           if (data.user) {
+             login(data.user);
+             // Check if user has complete profile info before redirecting to home
+             if (data.user.contactNumber && data.user.city && data.user.country) {
+               router.push("/home");
+             } else {
+               // If incomplete profile, redirect to complete profile with user info
+               const params = new URLSearchParams({
+                 email: data.user.email,
+                 name: data.user.name,
+                 image: payload.picture || "",
+                 fromGoogle: "true"
+               });
+               router.push(`/complete-profile?${params.toString()}`);
+             }
+           } else if (data.needsProfileCompletion) {
               const params = new URLSearchParams({
                 email: payload.email,
                 name: payload.name,
@@ -184,6 +197,9 @@ const SignUpPage = () => {
                 fromGoogle: "true"
               });
               router.push(`/complete-profile?${params.toString()}`);
+            } else {
+              console.log("Unexpected Google sign-in response, redirecting to landing");
+              router.push("/");
             }
           } catch (err: any) {
             setError(err.message || "Google sign-up failed");
@@ -388,8 +404,8 @@ const SignUpPage = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          
         },
+        credentials: 'include',
         body: JSON.stringify({
           // Basic user info
           name: form.name,
@@ -457,15 +473,8 @@ const SignUpPage = () => {
 
       if (res.ok) {
         setSuccess("Registration successful!");
-        // Always set token in localStorage for immediate session
-        if (data.token) {
-          if (typeof window !== "undefined") {
-            localStorage.setItem("token", data.token);
-          }
-        }
-        // Always trigger login to update auth context and user state
-        if (login && data.token) {
-          login(data.user, data.token);
+        if (login && data.user) {
+          login(data.user);
         }
         setTimeout(() => {
           router.push("/home");

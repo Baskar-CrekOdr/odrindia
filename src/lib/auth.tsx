@@ -10,45 +10,31 @@ import React, {
   useRef,
 } from "react";
 import { useRouter } from "next/navigation";
-import {jwtDecode} from "jwt-decode";
+import { apiFetch } from "@/lib/api";
+import { fetchAndStoreCsrfToken } from "@/lib/csrf";
+import { 
+  User, 
+  AuthResponse, 
+  SessionResponse,
+  GoogleUser 
+} from "@/types/auth";
+import { 
+  storeUserSession, 
+  getUserSession, 
+  clearUserSession,
+  updateLastActivity 
+} from "@/lib/session";
 
 // Remove trailing slash to prevent double slashes in URLs
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api").replace(/\/$/, "");
 
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-  userRole: "INNOVATOR" | "MENTOR" | "ADMIN" | "OTHER";
-  hasMentorApplication?: boolean;
-  isMentorApproved?: boolean;
-  mentorRejectionReason?: string | null; // Add this field to store rejection reason
-  contactNumber?: string;
-  city?: string;
-  country?: string;
-  institution?: string;
-  highestEducation?: string;
-  odrLabUsage?: string;
-  imageAvatar?: string;
-  createdAt: string;
-}
-
-// This interface represents the API response structure
-interface GoogleSignInResponse {
-  user: User;
-  needsProfileCompletion: boolean; // This is calculated by the backend, not stored
-  token?: string; 
-  message: string;
-}
-
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  accessToken: string | null; // 
-  login: (userData: User, token: string) => void;
+  login: (userData: User) => void;
   logout: () => void;
   signup: (userData: any) => Promise<any>;
-  signInWithGoogle: (googleUser: any) => Promise<GoogleSignInResponse>;
+  signInWithGoogle: (googleUser: GoogleUser) => Promise<AuthResponse>;
   refreshUser: () => Promise<void>;
   completeProfile: (profileData: any) => Promise<any>;
 }
@@ -58,110 +44,138 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
-
   const refreshPromiseRef = useRef<Promise<void> | null>(null);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Set client flag to prevent hydration mismatches
   useEffect(() => {
     setIsClient(true);
+    // Fetch CSRF token on app load (client only)
+    if (typeof window !== "undefined") {
+      fetchAndStoreCsrfToken().catch((err) => {
+        console.error("Failed to fetch CSRF token on app load:", err);
+      });
+    }
   }, []);
+
+  // Initialize user state from session storage on client mount
+  useEffect(() => {
+    if (isClient) {
+      const storedUser = getUserSession();
+      if (storedUser) {
+        setUser(storedUser);
+        updateLastActivity();
+      }
+      setLoading(false);
+    }
+  }, [isClient]);
 
   // Debounced refreshUser function to prevent race conditions
   const refreshUser = useCallback(async () => {
     // Only run on client side
     if (!isClient) return;
 
-    // If a refresh is already in progress, return that promise
+    // Prevent multiple concurrent refresh attempts
     if (refreshPromiseRef.current) {
       return refreshPromiseRef.current;
     }
 
-    // Clear any pending timeout
     if (refreshTimeoutRef.current) {
       clearTimeout(refreshTimeoutRef.current);
     }
 
-    // Create and store the refresh promise
     refreshPromiseRef.current = (async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-
-        const response = await fetch(`${API_BASE_URL}/auth/session`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
+        const response = await apiFetch(`/auth/session`);
         if (response.ok) {
-          const data = await response.json();
-          setUser(data.user);
-          setAccessToken(token);
+          const data: SessionResponse = await response.json();
+          if (data.user) {
+            // Merge needsProfileCompletion if present
+            const userData = { 
+              ...data.user, 
+              needsProfileCompletion: data.needsProfileCompletion 
+            };
+            setUser(userData);
+            storeUserSession(userData);
+            updateLastActivity();
+          } else {
+            // Clear user state if session is invalid
+            setUser(null);
+            clearUserSession();
+          }
         } else {
-          localStorage.removeItem("token");
+          // Clear user state on auth failure
           setUser(null);
-          setAccessToken(null);
+          clearUserSession();
         }
       } catch (error) {
         console.error("Session refresh failed:", error);
-        localStorage.removeItem("token");
-        setUser(null);
-        setAccessToken(null);
+        // Only clear user state if it's a network error, not auth error
+        if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+          console.warn("Network error during session refresh, keeping current user state");
+        } else {
+          setUser(null);
+          clearUserSession();
+        }
       } finally {
-        // Reset the promise reference after a short delay to prevent immediate subsequent calls
+        // Reset refresh promise after a delay to allow new refresh attempts
         refreshTimeoutRef.current = setTimeout(() => {
           refreshPromiseRef.current = null;
         }, 2000);
         setLoading(false);
       }
     })();
-
     return refreshPromiseRef.current;
   }, [isClient]);
 
-  // Initialize auth state only on client side
-  useEffect(() => {
-    if (isClient) {
-      refreshUser();
-    }
-  }, [refreshUser, isClient]);
-
-  const login = useCallback((userData: User, token: string) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem("token", token);
-    }
+  const login = useCallback((userData: User) => {
     setUser(userData);
-    setAccessToken(token);
+    storeUserSession(userData);
+    updateLastActivity();
     setLoading(false);
   }, []);
 
-  const logout = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem("token");
+  const logout = useCallback(async () => {
+    try {
+      // Call the server logout endpoint to clear server-side cookies
+      const response = await apiFetch(`/auth/logout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: 'include', // Ensure cookies are sent
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Server logout successful:", data.message || "Cookies cleared");
+      } else {
+        console.warn("Server logout responded with error, but continuing with client cleanup");
+      }
+    } catch (error) {
+      // Even if the server call fails, we should still clear client state
+      console.error("Server logout failed, clearing client state anyway:", error);
     }
+    
+    // Clear all user-related state
     setUser(null);
-    setAccessToken(null);
-
-    // Clear any pending refresh
+    clearUserSession();
+    
+    // Clear any pending refresh operations
     if (refreshTimeoutRef.current) {
       clearTimeout(refreshTimeoutRef.current);
       refreshTimeoutRef.current = null;
     }
-
+    refreshPromiseRef.current = null;
+    
     router.push("/signin");
   }, [router]);
 
   const signup = useCallback(
     async (userData: any) => {
-      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+      const response = await apiFetch(`/auth/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -181,9 +195,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const signInWithGoogle = useCallback(
-    async (googleUser: any): Promise<GoogleSignInResponse> => {
+    async (googleUser: GoogleUser): Promise<AuthResponse> => {
       try {
-        const response = await fetch(`${API_BASE_URL}/auth/google-signin`, {
+        const response = await apiFetch(`/auth/google-signin`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -199,17 +213,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw new Error("Google sign-in failed");
         }
 
-        const data: GoogleSignInResponse = await response.json();
+        const data: AuthResponse = await response.json();
 
-        // Always set user in context
-        setUser(data.user);
-
-        // If user doesn't need profile completion and we have a token, log them in
-        if (!data.needsProfileCompletion && data.token) {
-          if (typeof window !== 'undefined') {
-            localStorage.setItem("token", data.token);
-          }
-          setAccessToken(data.token);
+        // Always set user in context, include needsProfileCompletion
+        if (data.user) {
+          const userData = { 
+            ...data.user, 
+            needsProfileCompletion: data.needsProfileCompletion 
+          };
+          setUser(userData);
+          storeUserSession(userData);
+          updateLastActivity();
         }
 
         return data;
@@ -225,7 +239,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const completeProfile = useCallback(
     async (profileData: any) => {
       try {
-        const response = await fetch(`${API_BASE_URL}/auth/complete-profile`, {
+        const response = await apiFetch(`/auth/complete-profile`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -240,13 +254,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const data = await response.json();
 
-        // Update user data and set token
-        if (data.user && data.token) {
-          if (typeof window !== 'undefined') {
-            localStorage.setItem("token", data.token);
-          }
-          setUser(data.user);
-          setAccessToken(data.token);
+        // Update user data only, include needsProfileCompletion if present
+        if (data.user) {
+          const userData = { 
+            ...data.user, 
+            needsProfileCompletion: data.needsProfileCompletion 
+          };
+          setUser(userData);
+          storeUserSession(userData);
+          updateLastActivity();
         }
 
         return data;
@@ -258,35 +274,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
-  // Decode JWT token to get user info
-  const getUserFromToken = (token: string): User | null => {
-    try {
-      // Decode JWT token
-      const decoded = jwtDecode<any>(token);
-      return {
-        id: decoded.id,
-        name: decoded.name,
-        email: decoded.email,
-        userRole: decoded.userRole as "INNOVATOR" | "MENTOR" | "ADMIN" | "OTHER",
-        isMentorApproved: decoded.isMentorApproved || false, // Include mentor approval status
-        contactNumber: decoded.contactNumber,
-        city: decoded.city,
-        country: decoded.country,
-        institution: decoded.institution,
-        highestEducation: decoded.highestEducation,
-        odrLabUsage: decoded.odrLabUsage,
-        imageAvatar: decoded.imageAvatar,
-        createdAt: decoded.createdAt,
-      };
-    } catch (error) {
-      return null;
-    }
-  };
-
   const value = {
     user,
     loading,
-    accessToken, // <-- Add this line
     login,
     logout,
     signup,

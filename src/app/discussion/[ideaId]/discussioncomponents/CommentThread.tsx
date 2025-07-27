@@ -99,7 +99,7 @@ export default function CommentThread({
                   }`}>
                   <ThumbsUp className="h-4 w-4" />
                   <span>
-                    {comment.likes + (commentLikes[comment.id] ? 1 : 0)}
+                    {comment.likes}
                   </span>
                 </button>
               ) : (

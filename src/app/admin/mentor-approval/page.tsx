@@ -11,7 +11,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
-import { apiFetch } from '@/lib/api';
+import adminService from '@/lib/adminService';
 
 type Mentor = {
   id: string;
@@ -45,36 +45,23 @@ export default function MentorApprovalPage() {
   const fetchPendingMentors = async () => {
     try {
       setLoading(true);
-      console.log('Fetching pending mentors...');
-      
-      const response = await apiFetch('/admin/approve-mentor');
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Failed with status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('Received mentors data:', data);
-      setMentors(data);
       setError(null);
+      const data = await adminService.getPendingMentors();
+      setMentors(data);
     } catch (err) {
-      console.error('Failed to fetch pending mentors:', err);
-      
-      // Provide more detailed error information
-      let errorMessage = 'Please try again later.';
-      
+      let errorMessage = 'Failed to load pending mentors. ';
       if (err instanceof Error) {
-        if (err.message.includes('401')) {
-          errorMessage = 'Authentication failed. Please log in again.';
-        } else if (err.message.includes('403')) {
-          errorMessage = 'You do not have permission to access this resource.';
+        if (err.message.includes('Authentication')) {
+          errorMessage += 'Session expired. Please log in again.';
+        } else if (err.message.includes('CSRF')) {
+          errorMessage += 'Security error. Please refresh the page.';
+        } else if (err.message.includes('Network')) {
+          errorMessage += 'Network error. Please check your connection.';
         } else {
-          errorMessage = err.message;
+          errorMessage += err.message;
         }
       }
-      
-      setError(`Failed to load pending mentors. ${errorMessage}`);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -82,25 +69,23 @@ export default function MentorApprovalPage() {
 
   const approveMentor = async (mentorId: string) => {
     try {
-      console.log(`Approving mentor: ${mentorId}`);
-      
-      const response = await apiFetch('/admin/approve-mentor', {
-        method: 'POST',
-        body: JSON.stringify({ userId: mentorId })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Failed with status: ${response.status}`);
-      }
-      
-      // Remove approved mentor from the list
+      await adminService.approveMentor(mentorId);
       setMentors(mentors.filter(mentor => mentor.id !== mentorId));
-      // Show success message
       alert('Mentor approved successfully');
     } catch (err) {
-      console.error('Failed to approve mentor:', err);
-      alert(`Failed to approve mentor: ${err instanceof Error ? err.message : 'Please try again.'}`);
+      let errorMessage = 'Failed to approve mentor. ';
+      if (err instanceof Error) {
+        if (err.message.includes('Authentication')) {
+          errorMessage += 'Session expired. Please log in again.';
+        } else if (err.message.includes('CSRF')) {
+          errorMessage += 'Security error. Please refresh the page.';
+        } else if (err.message.includes('Network')) {
+          errorMessage += 'Network error. Please check your connection.';
+        } else {
+          errorMessage += err.message;
+        }
+      }
+      alert(errorMessage);
     }
   };
 
@@ -112,30 +97,25 @@ export default function MentorApprovalPage() {
 
   const handleRejectConfirm = async () => {
     if (!currentMentor) return;
-    
     try {
-      console.log(`Rejecting mentor: ${currentMentor.id}, reason: ${rejectionReason || 'None provided'}`);
-      
-      const response = await apiFetch('/admin/approve-mentor/reject', {
-        method: 'POST',
-        body: JSON.stringify({
-          userId: currentMentor.id,
-          reason: rejectionReason
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Failed with status: ${response.status}`);
-      }
-      
-      // Remove rejected mentor from the list
+      await adminService.rejectMentor(currentMentor.id, rejectionReason);
       setMentors(mentors.filter(mentor => mentor.id !== currentMentor.id));
       setRejectModalVisible(false);
       alert('Mentor application rejected');
     } catch (err) {
-      console.error('Failed to reject mentor:', err);
-      alert(`Failed to reject mentor: ${err instanceof Error ? err.message : 'Please try again.'}`);
+      let errorMessage = 'Failed to reject mentor. ';
+      if (err instanceof Error) {
+        if (err.message.includes('Authentication')) {
+          errorMessage += 'Session expired. Please log in again.';
+        } else if (err.message.includes('CSRF')) {
+          errorMessage += 'Security error. Please refresh the page.';
+        } else if (err.message.includes('Network')) {
+          errorMessage += 'Network error. Please check your connection.';
+        } else {
+          errorMessage += err.message;
+        }
+      }
+      alert(errorMessage);
     }
   };
 

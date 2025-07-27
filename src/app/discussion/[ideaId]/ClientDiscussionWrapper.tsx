@@ -12,7 +12,7 @@ interface ClientDiscussionWrapperProps {
 }
 
 export default function ClientDiscussionWrapper({ ideaId }: ClientDiscussionWrapperProps) {
-  const { accessToken } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [idea, setIdea] = useState<Idea | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,11 +21,11 @@ export default function ClientDiscussionWrapper({ ideaId }: ClientDiscussionWrap
   useEffect(() => {
     async function loadDiscussionData() {
       try {
-        // Fetch idea details and comments with the access token
-        const ideaData = await fetchIdeaDetails(ideaId, accessToken);
+        // Fetch idea details and comments - apiFetch handles authentication automatically
+        const ideaData = await fetchIdeaDetails(ideaId);
         setIdea(ideaData);
         
-        const commentsData = await fetchComments(ideaId, accessToken);
+        const commentsData = await fetchComments(ideaId);
         setComments(commentsData);
       } catch (error: unknown) {
         console.error("Error loading discussion:", error);
@@ -35,20 +35,16 @@ export default function ClientDiscussionWrapper({ ideaId }: ClientDiscussionWrap
       }
     }
 
-    if (accessToken) {
-      loadDiscussionData();
-    } else {
-      // If no token yet, set a short delay to wait for auth to initialize
-      const timer = setTimeout(() => {
-        if (!accessToken) {
-          setLoading(false);
-          setError("Authentication required to view this discussion");
-        }
-      }, 1000);
-      
-      return () => clearTimeout(timer);
+    // Wait for auth to finish loading, then check if user is authenticated
+    if (!authLoading) {
+      if (user) {
+        loadDiscussionData();
+      } else {
+        setLoading(false);
+        setError("Authentication required to view this discussion");
+      }
     }
-  }, [ideaId, accessToken]);
+  }, [ideaId, user, authLoading]);
 
   if (loading) {
     return (

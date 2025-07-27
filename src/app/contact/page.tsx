@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ArrowRight, Building, Check, HelpCircle, Mail, MapPin, Phone } from "lucide-react"
 import { motion } from "framer-motion" // Added framer-motion import
 
@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { apiFetch } from "@/lib/api"
 
 // Animation variants
 const fadeInUp = {
@@ -39,16 +40,64 @@ const staggerContainer = {
 };
 
 export default function ContactPage() {
-  const [formStatus, setFormStatus] = useState<"idle" | "submitting" | "submitted">("idle")
+  const [formStatus, setFormStatus] = useState<"idle" | "submitting" | "submitted" | "error">("idle")
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: ""
+  })
+  const [errorMsg, setErrorMsg] = useState("")
+  const [csrfToken, setCsrfToken] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    // Fetch CSRF token on mount
+    apiFetch("/csrf-token").then(async (res) => {
+      if (res.ok) {
+        const data = await res.json()
+        setCsrfToken(data.csrfToken)
+      }
+    })
+  }, [])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value })
+  }
+
+  const handleSubjectChange = (value: string) => {
+    setFormData({ ...formData, subject: value })
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setFormStatus("submitting")
-    
-    // Simulate form submission
-    setTimeout(() => {
-      setFormStatus("submitted")
-    }, 1500)
+    setErrorMsg("")
+    try {
+      const res = await apiFetch("/contact", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          message: `${formData.subject ? `[${formData.subject}] ` : ""}${formData.message}`
+        })
+      })
+      if (res.ok) {
+        setFormStatus("submitted")
+        setFormData({ name: "", email: "", subject: "", message: "" })
+      } else {
+        const data = await res.json()
+        setErrorMsg(data.error || "Failed to send message.")
+        setFormStatus("error")
+      }
+    } catch (err) {
+      setErrorMsg("Network error. Please try again later.")
+      console.log(err)
+      setFormStatus("error")
+    }
   }
 
   return (
@@ -265,23 +314,23 @@ export default function ContactPage() {
                       >
                         <motion.div variants={fadeInUp}>
                           <Label htmlFor="name">Full Name</Label>
-                          <Input id="name" placeholder="Your name" className="mt-1" />
+                          <Input id="name" placeholder="Your name" className="mt-1" value={formData.name} onChange={handleChange} />
                         </motion.div>
                         <motion.div variants={fadeInUp}>
                           <Label htmlFor="email">Email</Label>
-                          <Input id="email" type="email" placeholder="Your email address" className="mt-1" />
+                          <Input id="email" type="email" placeholder="Your email address" className="mt-1" value={formData.email} onChange={handleChange} />
                         </motion.div>
                         <motion.div variants={fadeInUp}>
                           <Label htmlFor="subject">Subject</Label>
-                          <Select>
+                          <Select value={formData.subject} onValueChange={handleSubjectChange}>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a subject" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="general">General Inquiry</SelectItem>
-                              <SelectItem value="support">Technical Support</SelectItem>
-                              <SelectItem value="partnership">Partnership Opportunity</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
+                              <SelectItem value="General Inquiry">General Inquiry</SelectItem>
+                              <SelectItem value="Technical Support">Technical Support</SelectItem>
+                              <SelectItem value="Partnership Opportunity">Partnership Opportunity</SelectItem>
+                              <SelectItem value="Other">Other</SelectItem>
                             </SelectContent>
                           </Select>
                         </motion.div>
@@ -291,8 +340,15 @@ export default function ContactPage() {
                             id="message" 
                             placeholder="Your message" 
                             className="mt-1 min-h-[150px]" 
+                            value={formData.message}
+                            onChange={handleChange}
                           />
                         </motion.div>
+                        {formStatus === "error" && (
+                          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-600 text-sm">
+                            {errorMsg}
+                          </motion.div>
+                        )}
                         <motion.div variants={fadeInUp}>
                           <Button 
                             type="submit"

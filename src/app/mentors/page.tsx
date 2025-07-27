@@ -36,11 +36,11 @@ export default function MentorsPage() {
   }, []);
   
   // Log mentors data for debugging
-  useEffect(() => {
-    if (mentors.length > 0) {
-      console.log("Loaded mentors:", mentors);
-    }
-  }, [mentors]);
+  // useEffect(() => {
+  //   if (mentors.length > 0) {
+  //     console.log("Loaded mentors:", mentors);
+  //   }
+  // }, [mentors]);
 
   // Filter mentors based on search term
   const filteredMentors = mentors.filter(mentor => {
