@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { ArrowRight, Building, Check, HelpCircle, Mail, MapPin, Phone } from "lucide-react"
-import { motion } from "framer-motion" // Added framer-motion import
+import { useState } from "react"
+import { ArrowRight, Check, Mail } from "lucide-react"
+import { motion } from "framer-motion" 
 
 import { Button } from "@/components/ui/button"
 
@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { apiFetch } from "@/lib/api"
+import { fetchAndStoreCsrfToken } from "@/lib/csrf"
 
 // Animation variants
 const fadeInUp = {
@@ -48,17 +49,6 @@ export default function ContactPage() {
     message: ""
   })
   const [errorMsg, setErrorMsg] = useState("")
-  const [csrfToken, setCsrfToken] = useState("")
-
-  useEffect(() => {
-    // Fetch CSRF token on mount
-    apiFetch("/csrf-token").then(async (res) => {
-      if (res.ok) {
-        const data = await res.json()
-        setCsrfToken(data.csrfToken)
-      }
-    })
-  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.id]: e.target.value })
@@ -73,11 +63,13 @@ export default function ContactPage() {
     setFormStatus("submitting")
     setErrorMsg("")
     try {
+      // Ensure we have a fresh CSRF token
+      await fetchAndStoreCsrfToken()
+      
       const res = await apiFetch("/contact", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "x-csrf-token": csrfToken
         },
         body: JSON.stringify({
           name: formData.name,
