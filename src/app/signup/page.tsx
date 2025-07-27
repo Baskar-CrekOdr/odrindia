@@ -174,12 +174,22 @@ const SignUpPage = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Google sign-up failed");
 
-            // Use the auth context login function to store user data (no token)
-            // if (data.user) {
-            //   login(data.user);
-            //   router.push("/home");
-            // } else 
-              if (data.needsProfileCompletion) {
+           if (data.user) {
+             login(data.user);
+             // Check if user has complete profile info before redirecting to home
+             if (data.user.contactNumber && data.user.city && data.user.country) {
+               router.push("/home");
+             } else {
+               // If incomplete profile, redirect to complete profile with user info
+               const params = new URLSearchParams({
+                 email: data.user.email,
+                 name: data.user.name,
+                 image: payload.picture || "",
+                 fromGoogle: "true"
+               });
+               router.push(`/complete-profile?${params.toString()}`);
+             }
+           } else if (data.needsProfileCompletion) {
               const params = new URLSearchParams({
                 email: payload.email,
                 name: payload.name,
@@ -188,8 +198,8 @@ const SignUpPage = () => {
               });
               router.push(`/complete-profile?${params.toString()}`);
             } else {
-              console.log("kuch toh gadbad hai");
-              router.push("/odrlabs");
+              console.log("Unexpected Google sign-in response, redirecting to landing");
+              router.push("/");
             }
           } catch (err: any) {
             setError(err.message || "Google sign-up failed");

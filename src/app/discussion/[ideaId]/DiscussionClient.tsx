@@ -32,7 +32,7 @@ export default function DiscussionClient({ idea: initialIdea, initialComments }:
   const [comments, setComments] = useState<Comment[]>(initialComments)
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({})
-  const [ideaLikes, setIdeaLikes] = useState(initialIdea.likes)
+  const [ideaLikes, setIdeaLikes] = useState(initialIdea.likes || 0)
   const [hasLiked, setHasLiked] = useState(false)
   const [commentLikes, setCommentLikes] = useState<Record<string, boolean>>({})
 
@@ -56,11 +56,11 @@ export default function DiscussionClient({ idea: initialIdea, initialComments }:
       const checkLikeStatus = async () => {
         try {
           // Check idea like status
-          const ideaLiked = await checkIdeaLikeStatus(idea.id, user.id)
+          const ideaLiked = await checkIdeaLikeStatus(idea.id)
           setHasLiked(ideaLiked)
           
           // Check comment likes
-          const likedComments = await fetchLikedComments(idea.id, user.id)
+          const likedComments = await fetchLikedComments(idea.id)
           const likedCommentsMap: Record<string, boolean> = {}
           likedComments.forEach((commentId: string) => {
             likedCommentsMap[commentId] = true
@@ -94,9 +94,9 @@ export default function DiscussionClient({ idea: initialIdea, initialComments }:
     
     const action = hasLiked ? "unlike" : "like"
     try {
-      const data = await likeIdea(idea.id, user.id, action)
+      const data = await likeIdea(idea.id, action)
       setIdeaLikes(data.likes)
-      setHasLiked(!hasLiked)
+      setHasLiked(data.liked)
     } catch (error) {
       toast.error("Failed to update like.")
     }
@@ -112,8 +112,8 @@ export default function DiscussionClient({ idea: initialIdea, initialComments }:
     const isLiked = commentLikes[commentId]
     const action = isLiked ? "unlike" : "like"
     try {
-      const data = await likeComment(idea.id, commentId, user.id, action)
-      setCommentLikes((prev) => ({ ...prev, [commentId]: !isLiked }))
+      const data = await likeComment(idea.id, commentId, action)
+      setCommentLikes((prev) => ({ ...prev, [commentId]: data.liked }))
       setComments((prev) => prev.map(c =>
         c.id === commentId ? { ...c, likes: data.likes } : c
       ))
@@ -135,7 +135,7 @@ export default function DiscussionClient({ idea: initialIdea, initialComments }:
     }
     
     try {
-      const newComment = await postComment(idea.id, user.id, content, undefined)
+      const newComment = await postComment(idea.id, content, undefined)
       setComments((prev) => [...prev, { ...newComment, replies: [] }])
       toast.success("Your comment has been added to the discussion.")
     } catch (error) {
@@ -151,7 +151,7 @@ export default function DiscussionClient({ idea: initialIdea, initialComments }:
     }
     
     try {
-      const newReply = await postComment(idea.id, user.id, content, parentId)
+      const newReply = await postComment(idea.id, content, parentId)
       
       // Update comments state to add the reply to the correct parent
       // This function recursively searches for the parent comment in the comment tree

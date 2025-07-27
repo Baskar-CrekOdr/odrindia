@@ -37,9 +37,9 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
   let triedRefresh = false;
   while (true) {
     try {
-      console.log(`Making API request to: ${API_BASE_URL}${path}`);
+     // console.log(`Making API request to: ${API_BASE_URL}${path}`);
       const response = await fetch(`${API_BASE_URL}${path}`, fetchOptions);
-      console.log(`API Response from ${path}: Status ${response.status}`);
+     // console.log(`API Response from ${path}: Status ${response.status}`);
 
       if (response.status === 401 && !triedRefresh && path !== '/auth/refresh-token' && path !== '/auth/login') {
         // Try to refresh token once

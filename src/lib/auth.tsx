@@ -77,6 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Only run on client side
     if (!isClient) return;
 
+    // Prevent multiple concurrent refresh attempts
     if (refreshPromiseRef.current) {
       return refreshPromiseRef.current;
     }
@@ -100,18 +101,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             storeUserSession(userData);
             updateLastActivity();
           } else {
+            // Clear user state if session is invalid
             setUser(null);
             clearUserSession();
           }
         } else {
+          // Clear user state on auth failure
           setUser(null);
           clearUserSession();
         }
       } catch (error) {
         console.error("Session refresh failed:", error);
-        setUser(null);
-        clearUserSession();
+        // Only clear user state if it's a network error, not auth error
+        if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+          console.warn("Network error during session refresh, keeping current user state");
+        } else {
+          setUser(null);
+          clearUserSession();
+        }
       } finally {
+        // Reset refresh promise after a delay to allow new refresh attempts
         refreshTimeoutRef.current = setTimeout(() => {
           refreshPromiseRef.current = null;
         }, 2000);
@@ -131,12 +140,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     try {
       // Call the server logout endpoint to clear server-side cookies
-      await apiFetch(`/auth/logout`, {
+      const response = await apiFetch(`/auth/logout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: 'include', // Ensure cookies are sent
       });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Server logout successful:", data.message || "Cookies cleared");
+      } else {
+        console.warn("Server logout responded with error, but continuing with client cleanup");
+      }
     } catch (error) {
       // Even if the server call fails, we should still clear client state
       console.error("Server logout failed, clearing client state anyway:", error);

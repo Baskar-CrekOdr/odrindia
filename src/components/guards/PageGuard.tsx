@@ -41,12 +41,25 @@ export default function PageGuard({
         console.log(`PageGuard - Authentication required but not logged in, current path: ${currentPath}`);
         
         // Avoid redirect loops by checking if we're not already at the redirect destination
-        if (currentPath !== redirectTo) {
+        if (currentPath !== redirectTo && currentPath !== "/complete-profile") {
           console.log(`PageGuard - Redirecting to ${redirectTo} with return URL`);
           router.push(`${redirectTo}?redirect=${encodeURIComponent(currentPath)}`);
           
           // Display a toast notification
           toast.info("Please log in to access this page");
+        }
+      }
+      // Case 1.5: User authenticated but needs profile completion
+      else if (requireAuth && user && user.needsProfileCompletion) {
+        const currentPath = window.location.pathname;
+        console.log(`PageGuard - User needs profile completion, current path: ${currentPath}`);
+        
+        // Only redirect if not already on complete-profile page
+        if (currentPath !== "/complete-profile") {
+          console.log(`PageGuard - Redirecting to complete-profile`);
+          router.push(`/complete-profile?redirect=${encodeURIComponent(currentPath)}`);
+          
+          toast.info("Please complete your profile to continue");
         }
       }
       // Case 2: Specific role required but user doesn't have it
@@ -79,13 +92,19 @@ export default function PageGuard({
   if (
     loading ||
     (requireAuth && !user) ||
+    (requireAuth && user && user.needsProfileCompletion && window.location.pathname !== "/complete-profile") ||
     (requiredRole && user && user.userRole !== requiredRole)
   ) {
     return (
       <div className="flex h-[60vh] w-full items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-[#0a1e42]"></div>
-          <p className="text-lg text-gray-600">Verifying access...</p>
+          <p className="text-lg text-gray-600">
+            {loading ? "Loading..." : 
+             requireAuth && !user ? "Checking authentication..." :
+             requireAuth && user && user.needsProfileCompletion ? "Redirecting to complete profile..." :
+             "Verifying access..."}
+          </p>
         </div>
       </div>
     );
