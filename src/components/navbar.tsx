@@ -37,11 +37,18 @@ const navItems = [
 				icon: BookOpen,
 			},
 			{
-				title: "ICODR standards",
-				href: "https://icodr.org/standards/",
+				title: "ICODR",
+				href: "https://icodr.org/",
 				description:
 					"ICODR is an international nonprofit, incorporated in the United States, that drives the development, convergence, and adoption of open standards for the global effort to resolve disputes and conflicts using information and communications technology.",
 				icon: Scale,
+			},
+			{
+				title:"ODR Standards",
+				href: "https://icodr.org/Standards/",
+				description:
+					"ODR Standards apply to ODR practitioners and to technological platforms, systems, and tools when employed for dispute handling. They are interdependent and must be applied together.",
+				icon: Scale
 			},
 			{
 				title: "Mediate",
