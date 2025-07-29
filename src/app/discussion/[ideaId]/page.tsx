@@ -2,15 +2,16 @@ import { Metadata } from "next";
 import { Suspense } from "react";
 import ClientDiscussionWrapper from "./ClientDiscussionWrapper";
 
-// Full Next.js PageProps type with params possibly being a Promise
+// Updated PageProps type to explicitly indicate both params and searchParams are Promises
 type PageProps = {
-  params: { ideaId: string } | Promise<{ ideaId: string }>;
+  params: Promise<{ ideaId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 // Use a static metadata approach that doesn't depend on API calls
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   // Ensure params is awaited before accessing properties
-  const resolvedParams = await Promise.resolve(params);
+  const resolvedParams = await params;
   const { ideaId } = resolvedParams;
   
   // Return static metadata that doesn't require API calls
@@ -27,10 +28,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 // Server component - the main page
-export default async function DiscussionPage({ params }: PageProps) {
+export default async function DiscussionPage({ params, searchParams }: PageProps) {
   // Ensure params is awaited before accessing properties
-  const resolvedParams = await Promise.resolve(params);
+  const resolvedParams = await params;
   const { ideaId } = resolvedParams;
+  
+  // Also await searchParams if needed
+  const resolvedSearchParams = await searchParams;
+  
   return (
     <Suspense fallback={
       <div className="flex flex-col items-center justify-center py-12 space-y-4">
@@ -42,5 +47,6 @@ export default async function DiscussionPage({ params }: PageProps) {
     </Suspense>
   );
 }
+
 
 

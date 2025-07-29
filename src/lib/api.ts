@@ -39,7 +39,7 @@ export async function apiFetch(path: string, options: ApiOptions = {}) {
     credentials: options.credentials || 'include',
   };
 
-  let triedRefresh = false;
+  const triedRefresh = false;
   while (true) {
     try {
      // console.log(`Making API request to: ${API_BASE_URL}${path}`);
