@@ -23,7 +23,7 @@ export function LetsCollaborate() {
             {
               icon: <MessageSquare className="h-7 w-7" />,
               title: "Designing Dispute Resolution Systems",
-              subtitle: "Custom solutions for complex dispute scenarios",
+              subtitle: "Custom solutions for complex dispute scenarios applying internationally recognized ODR Standards",
               description: "Design comprehensive dispute resolution systems tailored to specific industries, integrating advanced technology with human expertise"
             },
             {

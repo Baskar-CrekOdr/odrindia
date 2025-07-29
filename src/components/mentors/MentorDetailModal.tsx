@@ -191,7 +191,7 @@ const MentorDetailModal: React.FC<MentorDetailModalProps> = ({
                   {mentor.ideas.map((idea) => (
                     <Card key={idea.id} className="overflow-hidden hover:shadow-md transition-all duration-300 border border-blue-100">
                       <CardContent className="p-4">
-                        <Link href={`/ideas/${idea.id}`} className="hover:no-underline block">
+                        <Link href={`/discussion/${idea.id}`} className="hover:no-underline block">
                           <h4 className="font-semibold text-lg text-blue-700 hover:text-blue-800 mb-2 break-words">
                             {idea.title}
                           </h4>
@@ -224,7 +224,7 @@ const MentorDetailModal: React.FC<MentorDetailModalProps> = ({
                   {mentor.mentoringIdeas.map((mentorship) => (
                     <Card key={mentorship.idea.id} className="overflow-hidden hover:shadow-md transition-all duration-300 border border-blue-100">
                       <CardContent className="p-4">
-                        <Link href={`/ideas/${mentorship.idea.id}`} className="hover:no-underline block">
+                        <Link href={`/discussion/${mentorship.idea.id}`} className="hover:no-underline block">
                           <h4 className="font-semibold text-lg text-blue-700 hover:text-blue-800 mb-2 break-words">
                             {mentorship.idea.title}
                           </h4>
