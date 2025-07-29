@@ -1,9 +1,14 @@
 import { getCsrfToken, fetchAndStoreCsrfToken } from "@/lib/csrf";
 
+// Define extended options interface with our custom properties
+interface ApiOptions extends RequestInit {
+  isRefreshAttempt?: boolean;
+}
+
 // export const API_BASE_URL = "https://13.233.201.37";
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 //export const API_BASE_URL = "http://localhost:4000/api";
-export async function apiFetch(path: string, options: RequestInit = {}) {
+export async function apiFetch(path: string, options: ApiOptions = {}) {
   // Create headers object with proper typing
   const headers = new Headers(options.headers || {});
 
@@ -41,23 +46,36 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
       const response = await fetch(`${API_BASE_URL}${path}`, fetchOptions);
      // console.log(`API Response from ${path}: Status ${response.status}`);
 
-      if (response.status === 401 && !triedRefresh && path !== '/auth/refresh-token' && path !== '/auth/login') {
-        // Try to refresh token once
-        console.warn(`401 from ${path}, attempting refresh-token`);
-        const refreshResp = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
-          method: 'POST',
-          credentials: 'include'
-        });
-        if (refreshResp.ok) {
-          triedRefresh = true;
-          continue; // Retry original request
-        } else {
-          // Refresh failed, log out user if possible
-          if (typeof window !== 'undefined') {
-            window.localStorage?.clear();
+      // Handle 401 errors
+      if (response.status === 401) {
+        // Try token refresh if not already attempting it
+        if (!options.isRefreshAttempt) {
+          try {
+            const refreshed = await refreshTokens();
+            if (refreshed) {
+              // Retry original request with new tokens - fix: use path instead of endpoint
+              return apiFetch(path, { ...options, isRefreshAttempt: true });
+            }
+          } catch (refreshError) {
+            console.error('Error refreshing token:', refreshError);
           }
-          throw new Error('Session expired. Please sign in again.');
         }
+        
+        // Clear session data
+        if (typeof window !== 'undefined') {
+          // Use session storage clear instead of localStorage to preserve other app data
+          window.sessionStorage?.removeItem('userSession');
+          
+          // Redirect to login only if not on a public page
+          const isPublicRoute = /^\/(login|register|$)/.test(window.location.pathname);
+          if (!isPublicRoute) {
+            // Use history state instead of immediate redirect to prevent interrupting rendering
+            window.history.pushState({}, '', '/login?expired=true');
+          }
+        }
+        
+        // Use a more user-friendly error for UI display
+        throw new Error('Your session has expired. Please sign in again to continue.');
       }
 
       if (response.status === 403) {
@@ -76,6 +94,27 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
       console.error(`Network error in apiFetch to ${path}:`, err);
       throw err;
     }
+  }
+}
+
+// Add missing refreshTokens function if it doesn't exist elsewhere
+async function refreshTokens(): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (response.ok) {
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error("Error refreshing tokens:", error);
+    return false;
   }
 }
 

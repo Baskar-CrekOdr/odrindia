@@ -16,6 +16,7 @@ export interface User {
   highestEducation?: string | null;
   odrLabUsage?: string | null;
   createdAt?: string;
+
 }
 
 export interface Idea {
@@ -54,11 +55,16 @@ export interface Comment {
   id: string;
   content: string;
   createdAt: string;
-  ideaId: string;
-  userId: string;
-  user: User;
-  parentId?: string;
-  parent?: Comment;
-  replies?: Comment[];
+  updatedAt: string;
   likes: number;
+  // Support both field names for compatibility
+  user?: User;
+  author?: User;
+  replies?: Comment[];
+  parentId?: string | null;
+}
+
+// Helper function to get user data regardless of field name
+export function getCommentUser(comment: Comment): User | undefined {
+  return comment.user || comment.author;
 }
