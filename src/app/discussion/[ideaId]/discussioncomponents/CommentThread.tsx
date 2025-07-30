@@ -44,6 +44,10 @@ export default function CommentThread({
   const [replyContent, setReplyContent] = useState("");
   const isExpanded = expandedComments[comment.id] !== false; // Default to expanded
 
+  // Use either user or author field - simple inline solution
+  const commentUser = comment.user || comment.author;
+  const userInitials = commentUser ? getInitials(commentUser.name) : "?";
+
   const handleSubmitReply = async () => {
     if (!replyContent.trim()) return;
 
@@ -64,7 +68,7 @@ export default function CommentThread({
       <div className="flex gap-3">
         <Avatar className="h-8 w-8">
           <AvatarFallback className="bg-[#0a1e42] text-white">
-            {comment.user ? getInitials(comment.user.name) : "?"}
+            {userInitials}
           </AvatarFallback>
         </Avatar>
 
@@ -72,12 +76,12 @@ export default function CommentThread({
           <div className="rounded-lg bg-gray-50 p-4">
             <div className="mb-2 flex items-center justify-between">
               <div>
-                <span className="font-medium">
-                  {comment.user ? comment.user.name : "Unknown"}
+                <span className="font-medium text-gray-900">
+                  {commentUser?.name || "Unknown"}
                 </span>
-                {comment.user.userRole && (
+                {commentUser?.userRole && (
                   <span className="ml-2 rounded bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-700">
-                    {comment.user.userRole}
+                    {commentUser.userRole}
                   </span>
                 )}
               </div>
