@@ -24,6 +24,16 @@ import { fetchAndStoreCsrfToken } from "@/lib/csrf";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { MultiSelect } from "@/components/ui/multiselect";
 
+type FormDataType = {
+  title: string;
+  visibility: string;
+  collaborator: string[];
+  idea_caption: string;
+  description: string;
+  odr_experience: string;
+  consent: boolean;
+};
+
 // Animation variants
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -48,8 +58,8 @@ export default function SubmitIdeaClientPage() {
   const { user, loading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const OPTIONS = ["All", "Popular", "Recent", "Trending", "Archived", "All1", "Popular1", "Recent1", "Trending1", "Archived1", "All2", "Popular2", "Recent2", "Trending2", "Archived2"];
-  const [formData, setFormData] = useState({
+  const [usersList, setUsersList] = useState([]);
+  const [formData, setFormData] = useState<FormDataType>({
     title: "",
     visibility: "public",
     collaborator: [],
@@ -93,7 +103,7 @@ export default function SubmitIdeaClientPage() {
     }
   };
   
-  const handleMultiSelectChange = (value=[]) => {
+  const handleMultiSelectChange = (value: string[]) => {
     setFormData((prev) => ({ ...prev, collaborator: value }));
 
     // Clear error when user selects a value
@@ -234,6 +244,25 @@ export default function SubmitIdeaClientPage() {
       });
     }
   },[formData.visibility])
+
+  useEffect(() => {
+    const fetchUsersList = async () => {
+      try {
+        const response = await apiFetch('/user/list');
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Failed with status: ${response.status}`);
+        }
+        const data = await response.json();
+        setUsersList(data.users || []);
+      } catch (error: any) {
+        console.error('Failed to fetch users list:', error);
+      }
+    };
+    if (user?.id) {
+      fetchUsersList();
+    }
+  }, [user?.id]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -421,7 +450,7 @@ export default function SubmitIdeaClientPage() {
                               Collaborator {formData.visibility === "private" && <span className="text-red-500">*</span>}
                             </Label>
                             <MultiSelect
-                              options={OPTIONS}
+                              options={usersList}
                               value={formData.collaborator}
                               onValueChange={handleMultiSelectChange}
                               placeholder="Select Collaborator"
