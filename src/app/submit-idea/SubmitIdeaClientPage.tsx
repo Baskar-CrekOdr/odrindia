@@ -61,7 +61,7 @@ export default function SubmitIdeaClientPage() {
   const [usersList, setUsersList] = useState([]);
   const [formData, setFormData] = useState<FormDataType>({
     title: "",
-    visibility: "public",
+    visibility: "PUBLIC",
     collaborator: [],
     idea_caption: "",
     description: "",
@@ -206,7 +206,7 @@ export default function SubmitIdeaClientPage() {
       setTimeout(() => {
         setFormData({
           title: "",
-          visibility: "public",
+          visibility: "PUBLIC",
           collaborator: [],
           idea_caption: "",
           description: "",
@@ -235,7 +235,7 @@ export default function SubmitIdeaClientPage() {
   };
 
   useEffect(()=>{
-    if(formErrors["collaborator"] && formData.visibility === "public"){
+    if(formErrors["collaborator"] && formData.visibility === "PUBLIC"){
       // Clear collaborator errors if visibility is public
       setFormErrors((prev) => {
         const newErrors = { ...prev };
@@ -431,8 +431,8 @@ export default function SubmitIdeaClientPage() {
                                 <SelectValue placeholder="Visiblity" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="public">Public</SelectItem>
-                                <SelectItem value="private">Private</SelectItem>
+                                <SelectItem value="PUBLIC">Public</SelectItem>
+                                <SelectItem value="PRIVATE">Private</SelectItem>
                               </SelectContent>
                             </Select>
                             {getFieldError("visibility") && (

@@ -65,17 +65,17 @@ export default function IdeaDetails({
 
   const OPTIONS = ["All", "Popular", "Recent", "Trending", "Archived", "All1", "Popular1", "Recent1", "Trending1", "Archived1", "All2", "Popular2", "Recent2", "Trending2", "Archived2"];
   const [formData, setFormData] = useState({
-    visibility: "public",
+    visibility: "PUBLIC",
     collaborator: [] as string[],
   });
   
-  const handleMultiSelectChange = (value=[]) => {
+  const handleMultiSelectChange = (value: string[]) => {
     setFormData((prev) => ({ ...prev, collaborator: value }));
   }
 
   useEffect(()=>{
     setFormData({
-      visibility: 'public',
+      visibility: 'PUBLIC',
       collaborator: [...users]
     })
   },[])
@@ -98,8 +98,8 @@ export default function IdeaDetails({
                       <SelectValue placeholder="Visiblity" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="public"><Globe className="size-5" /> Public</SelectItem>
-                      <SelectItem value="private"><GlobeLock className="size-5" /> Private</SelectItem>
+                      <SelectItem value="PUBLIC"><Globe className="size-5" /> Public</SelectItem>
+                      <SelectItem value="PRIVATE"><GlobeLock className="size-5" /> Private</SelectItem>
                     </SelectContent>
                   </Select>
                   {
@@ -217,7 +217,7 @@ export default function IdeaDetails({
                     onClick={() => {
                       setIsVisibilityPrivate(false)
                       setFormData({
-                        visibility: "public",
+                        visibility: "PUBLIC",
                         collaborator: formData.collaborator?.length > 0 ? [...formData.collaborator] : [],
                       });
                     }}

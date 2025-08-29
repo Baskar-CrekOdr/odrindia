@@ -86,7 +86,7 @@ function AdminIdeaApprovalContent() {
     useState<IdeaSubmission | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const users = ["Alice", "Bob", "Charlie", "David", "Alice", "Bob", "Charlie", "David", "Alice", "Bob", "Charlie", "David", "Alice", "Bob", "Charlie", "David"]
-  const [visibility, setVisibility] = useState<"public" | "private">("public");
+  const [visibility, setVisibility] = useState<"PUBLIC" | "PRIVATE">("PUBLIC");
 
   // Define fetchSubmissions with useCallback before useEffect
   const fetchSubmissions = useCallback(async () => {
@@ -233,7 +233,7 @@ function AdminIdeaApprovalContent() {
               Idea Submission Review
             </h1>
             <p className="text-gray-500 text-lg">
-              Review and approve submitted ideas to make them public
+              Review and approve submitted ideas
             </p>
           </div>
 
@@ -347,7 +347,7 @@ function AdminIdeaApprovalContent() {
                                     variant="info"
                                     className="bg-blue-50 text-blue-700 border-blue-200 font-medium px-3 py-1">
                                     {
-                                      visibility === 'private' ? <div className="flex justify-center items-center gap-1"><GlobeLock className="size-4" /><span>Private</span></div> : <div className="flex justify-center items-center gap-1"><Globe className="size-4" /><span>Public</span></div>
+                                      visibility === 'PUBLIC' ? <div className="flex justify-center items-center gap-1"><Globe className="size-4" /><span>Public</span></div> : <div className="flex justify-center items-center gap-1"><GlobeLock className="size-4" /><span>Private</span></div>
                                     }
                                   </Badge>
                                 </div>
@@ -533,7 +533,7 @@ function AdminIdeaApprovalContent() {
                   </Badge>
                   <Badge variant="outline" className="bg-white/10 text-white border-white/20 px-2 py-1">
                     {
-                      visibility === 'private' ? <div className="flex justify-center items-center gap-1"><GlobeLock className="size-4" /><span>Private</span></div> : <div className="flex justify-center items-center gap-1"><Globe className="size-4" /><span>Public</span></div>
+                      visibility === 'PUBLIC' ? <div className="flex justify-center items-center gap-1"><Globe className="size-4" /><span>Public</span></div> : <div className="flex justify-center items-center gap-1"><GlobeLock className="size-4" /><span>Private</span></div>
                     }
                   </Badge>
                   <Badge variant="outline" className="bg-white/10 text-white border-white/20 px-2 py-1">
