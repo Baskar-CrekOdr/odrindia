@@ -21,6 +21,8 @@ import { ideaSubmissionSchema } from "./ideaSchema";
 import { saveSubmissionRecord } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
 import { fetchAndStoreCsrfToken } from "@/lib/csrf";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { MultiSelect } from "@/components/ui/multiselect";
 
 // Animation variants
 const fadeInUp = {
@@ -46,8 +48,11 @@ export default function SubmitIdeaClientPage() {
   const { user, loading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const OPTIONS = ["All", "Popular", "Recent", "Trending", "Archived", "All1", "Popular1", "Recent1", "Trending1", "Archived1", "All2", "Popular2", "Recent2", "Trending2", "Archived2"];
   const [formData, setFormData] = useState({
     title: "",
+    visibility: "public",
+    collaborator: [],
     idea_caption: "",
     description: "",
     odr_experience: "",
@@ -74,6 +79,32 @@ export default function SubmitIdeaClientPage() {
       });
     }
   };
+
+  const handleSelectChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, visibility: value }));
+
+    // Clear error when user selects a value
+    if (formErrors["visibility"]) {
+      setFormErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors["visibility"];
+        return newErrors;
+      });
+    }
+  };
+  
+  const handleMultiSelectChange = (value=[]) => {
+    setFormData((prev) => ({ ...prev, collaborator: value }));
+
+    // Clear error when user selects a value
+    if (formErrors["collaborator"]) {
+      setFormErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors["collaborator"];
+        return newErrors;
+      });
+    }
+  }
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
@@ -121,6 +152,8 @@ export default function SubmitIdeaClientPage() {
       // Map frontend field names to what the backend expects
       const mappedData = {
         title: formData.title,
+        visibility: formData.visibility,
+        collaborator: formData.collaborator,
         caption: formData.idea_caption, // backend expects 'caption'
         description: formData.description,
         priorOdrExperience: formData.odr_experience, // backend expects 'priorOdrExperience'
@@ -163,6 +196,8 @@ export default function SubmitIdeaClientPage() {
       setTimeout(() => {
         setFormData({
           title: "",
+          visibility: "public",
+          collaborator: [],
           idea_caption: "",
           description: "",
           odr_experience: "",
@@ -188,6 +223,17 @@ export default function SubmitIdeaClientPage() {
       ? formErrors[fieldName][0]
       : null;
   };
+
+  useEffect(()=>{
+    if(formErrors["collaborator"] && formData.visibility === "public"){
+      // Clear collaborator errors if visibility is public
+      setFormErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors["collaborator"];
+        return newErrors;
+      });
+    }
+  },[formData.visibility])
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -308,13 +354,13 @@ export default function SubmitIdeaClientPage() {
                       </CardHeader>
                       <CardContent className="pt-6">
                         <motion.form
-                          className="space-y-6"
+                          className="grid grid-cols-4 gap-2 space-y-4"
                           onSubmit={handleSubmit}
                           initial="hidden"
                           animate="visible"
                           variants={staggerContainer}>
                           <motion.div
-                            className="space-y-2"
+                            className="space-y-2 col-span-4"
                             variants={fadeInUp}>
                             <Label
                               htmlFor="title"
@@ -340,9 +386,60 @@ export default function SubmitIdeaClientPage() {
                               </p>
                             )}
                           </motion.div>
+                          <motion.div
+                            className="space-y-2 col-span-4 md:col-span-1"
+                            variants={fadeInUp}>
+                            <Label
+                              htmlFor="visibility"
+                              className="text-sm font-medium">
+                              Visibility <span className="text-red-500">*</span>
+                            </Label>
+                            <Select 
+                              value={formData.visibility}
+                              onValueChange={handleSelectChange}
+                            >
+                              <SelectTrigger id="visibility" className="w-full">
+                                <SelectValue placeholder="Visiblity" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="public">Public</SelectItem>
+                                <SelectItem value="private">Private</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {getFieldError("visibility") && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {getFieldError("visibility")}
+                              </p>
+                            )}
+                          </motion.div>
+                          <motion.div
+                            className="space-y-2 col-span-4 md:col-span-3"
+                            variants={fadeInUp}>
+                            <Label
+                              htmlFor="collaborator"
+                              className="text-sm font-medium">
+                              Collaborator {formData.visibility === "private" && <span className="text-red-500">*</span>}
+                            </Label>
+                            <MultiSelect
+                              options={OPTIONS}
+                              value={formData.collaborator}
+                              onValueChange={handleMultiSelectChange}
+                              placeholder="Select Collaborator"
+                              className={`transition-all ${
+                                getFieldError("collaborator")
+                                  ? "border-red-500 focus:ring-red-500"
+                                  : ""
+                              }`}
+                            />
+                            {getFieldError("collaborator") && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {getFieldError("collaborator")}
+                              </p>
+                            )}
+                          </motion.div>
 
                           <motion.div
-                            className="space-y-2"
+                            className="space-y-2 col-span-4"
                             variants={fadeInUp}>
                             <Label
                               htmlFor="idea_caption"
@@ -374,7 +471,7 @@ export default function SubmitIdeaClientPage() {
                           </motion.div>
 
                           <motion.div
-                            className="space-y-2"
+                            className="space-y-2 col-span-4"
                             variants={fadeInUp}>
                             <Label
                               htmlFor="description"
@@ -402,7 +499,7 @@ export default function SubmitIdeaClientPage() {
                           </motion.div>
 
                           <motion.div
-                            className="space-y-2"
+                            className="space-y-2 col-span-4"
                             variants={fadeInUp}>
                             <Label
                               htmlFor="odr_experience"
@@ -431,7 +528,7 @@ export default function SubmitIdeaClientPage() {
 
                           <motion.div
                             variants={fadeInUp}
-                            className="flex items-start space-x-2">
+                            className="flex items-start space-x-2 col-span-4">
                             <div className="flex h-5 items-center mt-0.5">
                               <input
                                 type="checkbox"
@@ -462,7 +559,9 @@ export default function SubmitIdeaClientPage() {
                             </div>
                           </motion.div>
 
-                          <motion.div variants={fadeInUp}>
+                          <motion.div 
+                            className="col-span-4"
+                            variants={fadeInUp}>
                             <Button
                               type="submit"
                               className="w-full bg-[#0a1e42] hover:bg-[#162d5a] transition-all duration-200"

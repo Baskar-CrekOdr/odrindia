@@ -23,6 +23,8 @@ import {
   Clock,
   ArrowUpDown,
   Eye,
+  Globe,
+  GlobeLock,
 } from "lucide-react";
 import {
   Dialog,
@@ -83,6 +85,8 @@ function AdminIdeaApprovalContent() {
   const [selectedSubmission, setSelectedSubmission] =
     useState<IdeaSubmission | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const users = ["Alice", "Bob", "Charlie", "David", "Alice", "Bob", "Charlie", "David", "Alice", "Bob", "Charlie", "David", "Alice", "Bob", "Charlie", "David"]
+  const [visibility, setVisibility] = useState<"public" | "private">("public");
 
   // Define fetchSubmissions with useCallback before useEffect
   const fetchSubmissions = useCallback(async () => {
@@ -333,11 +337,20 @@ function AdminIdeaApprovalContent() {
                           <div className="grid grid-cols-1 md:grid-cols-12 md:divide-x">
                             <div className="col-span-9 space-y-5 p-6">
                               <div>
-                                <Badge
-                                  variant="info"
-                                  className="mb-2 bg-blue-50 text-blue-700 border-blue-200 font-medium px-3 py-1">
-                                  ID: {submission.id.slice(0, 8)}
-                                </Badge>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Badge
+                                    variant="info"
+                                    className="bg-blue-50 text-blue-700 border-blue-200 font-medium px-3 py-1">
+                                    ID: {submission.id.slice(0, 8)}
+                                  </Badge>
+                                  <Badge
+                                    variant="info"
+                                    className="bg-blue-50 text-blue-700 border-blue-200 font-medium px-3 py-1">
+                                    {
+                                      visibility === 'private' ? <div className="flex justify-center items-center gap-1"><GlobeLock className="size-4" /><span>Private</span></div> : <div className="flex justify-center items-center gap-1"><Globe className="size-4" /><span>Public</span></div>
+                                    }
+                                  </Badge>
+                                </div>
                                 <CardTitle className="mb-2 text-xl text-[#0a1e42] line-clamp-2">
                                   {submission.title}
                                 </CardTitle>
@@ -515,10 +528,15 @@ function AdminIdeaApprovalContent() {
                   {selectedSubmission.ideaCaption}
                 </DialogDescription>
                 <div className="mt-2 flex flex-wrap gap-2 text-sm">
-                  <Badge variant="outline" className="bg-white/10 text-white border-white/20">
+                  <Badge variant="outline" className="bg-white/10 text-white border-white/20 px-2 py-1">
                     ID: {selectedSubmission.id.slice(0, 8)}
                   </Badge>
-                  <Badge variant="outline" className="bg-white/10 text-white border-white/20">
+                  <Badge variant="outline" className="bg-white/10 text-white border-white/20 px-2 py-1">
+                    {
+                      visibility === 'private' ? <div className="flex justify-center items-center gap-1"><GlobeLock className="size-4" /><span>Private</span></div> : <div className="flex justify-center items-center gap-1"><Globe className="size-4" /><span>Public</span></div>
+                    }
+                  </Badge>
+                  <Badge variant="outline" className="bg-white/10 text-white border-white/20 px-2 py-1">
                     Submitted:{" "}
                     {format(new Date(selectedSubmission.createdAt), "PP")}
                   </Badge>
@@ -541,6 +559,16 @@ function AdminIdeaApprovalContent() {
                           {paragraph}
                         </p>
                       ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="mb-2 font-semibold text-[#0a1e42] flex items-center gap-1.5 text-lg">
+                    <span className="inline-block w-2 h-2 bg-yellow-600 rounded-full"></span>
+                    Collaborators
+                  </h3>
+                  <div className="rounded-md bg-gray-50 p-4 text-gray-700 shadow-inner">
+                    {users.length > 0 ? users.join(", ") : <span className="text-muted-foreground">No collaborators</span>}
                   </div>
                 </div>
 
