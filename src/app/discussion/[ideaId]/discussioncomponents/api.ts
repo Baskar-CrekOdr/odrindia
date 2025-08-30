@@ -26,6 +26,26 @@ export async function fetchIdeaDetails(ideaId: string | null, accessToken?: stri
   }
 }
 
+export async function updateIdeaDetails(ideaId: string, data: Partial<Idea>): Promise<Idea> {
+  try {
+    const res = await apiFetch(`/ideas/${ideaId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        throw new Error('Authentication failed. Please log in again.');
+      }
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(`Failed to update idea details: ${res.status} ${res.statusText}${errorData.message ? ' - ' + errorData.message : ''}`);
+    }
+    return res.json();
+  } catch (error) {
+    console.error('Error updating idea details:', error);
+    throw error;
+  }
+}
+
 // Fetch comments with authentication
 export async function fetchComments(ideaId: string | null, accessToken?: string | null): Promise<Comment[]> {
   if (!ideaId) {

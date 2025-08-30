@@ -35,6 +35,7 @@ export interface Idea {
   views: number;
   likes: number;
   commentCount: number;
+  visibility: "PUBLIC" | "PRIVATE";
 }
 
 export interface IdeaCollaborator {
