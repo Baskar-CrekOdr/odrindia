@@ -27,7 +27,7 @@ import { MultiSelect } from "@/components/ui/multiselect";
 type FormDataType = {
   title: string;
   visibility: string;
-  collaborators: string[];
+  inviteCollaborators: string[];
   idea_caption: string;
   description: string;
   odr_experience: string;
@@ -62,7 +62,7 @@ export default function SubmitIdeaClientPage() {
   const [formData, setFormData] = useState<FormDataType>({
     title: "",
     visibility: "PUBLIC",
-    collaborators: [],
+    inviteCollaborators: [],
     idea_caption: "",
     description: "",
     odr_experience: "",
@@ -104,13 +104,13 @@ export default function SubmitIdeaClientPage() {
   };
   
   const handleMultiSelectChange = (value: string[]) => {
-    setFormData((prev) => ({ ...prev, collaborators: value }));
+    setFormData((prev) => ({ ...prev, inviteCollaborators: value }));
 
     // Clear error when user selects a value
-    if (formErrors["collaborators"]) {
+    if (formErrors["inviteCollaborators"]) {
       setFormErrors((prev) => {
         const newErrors = { ...prev };
-        delete newErrors["collaborators"];
+        delete newErrors["inviteCollaborators"];
         return newErrors;
       });
     }
@@ -163,7 +163,7 @@ export default function SubmitIdeaClientPage() {
       const mappedData = {
         title: formData.title,
         visibility: formData.visibility,
-        collaborators: formData.collaborators,
+        inviteCollaborators: formData.inviteCollaborators,
         caption: formData.idea_caption, // backend expects 'caption'
         description: formData.description,
         priorOdrExperience: formData.odr_experience, // backend expects 'priorOdrExperience'
@@ -207,7 +207,7 @@ export default function SubmitIdeaClientPage() {
         setFormData({
           title: "",
           visibility: "PUBLIC",
-          collaborators: [],
+          inviteCollaborators: [],
           idea_caption: "",
           description: "",
           odr_experience: "",
@@ -235,11 +235,11 @@ export default function SubmitIdeaClientPage() {
   };
 
   useEffect(()=>{
-    if(formErrors["collaborators"] && formData.visibility === "PUBLIC"){
-      // Clear collaborators errors if visibility is public
+    if(formErrors["inviteCollaborators"] && formData.visibility === "PUBLIC"){
+      // Clear invite collaborators errors if visibility is public
       setFormErrors((prev) => {
         const newErrors = { ...prev };
-        delete newErrors["collaborators"];
+        delete newErrors["inviteCollaborators"];
         return newErrors;
       });
     }
@@ -421,7 +421,7 @@ export default function SubmitIdeaClientPage() {
                             <Label
                               htmlFor="visibility"
                               className="text-sm font-medium">
-                              Visibility <span className="text-red-500">*</span>
+                              Visibility
                             </Label>
                             <Select 
                               value={formData.visibility}
@@ -435,36 +435,22 @@ export default function SubmitIdeaClientPage() {
                                 <SelectItem value="PRIVATE">Private</SelectItem>
                               </SelectContent>
                             </Select>
-                            {getFieldError("visibility") && (
-                              <p className="text-sm text-red-500 mt-1">
-                                {getFieldError("visibility")}
-                              </p>
-                            )}
                           </motion.div>
                           <motion.div
                             className="space-y-2 col-span-4 md:col-span-3"
                             variants={fadeInUp}>
                             <Label
-                              htmlFor="collaborators"
+                              htmlFor="inviteCollaborators"
                               className="text-sm font-medium">
-                              Collaborator {formData.visibility === "private" && <span className="text-red-500">*</span>}
+                              Invite Collaborators
                             </Label>
                             <MultiSelect
                               options={usersList}
-                              value={formData.collaborators}
+                              value={formData.inviteCollaborators}
                               onValueChange={handleMultiSelectChange}
                               placeholder="Select Collaborator"
-                              className={`transition-all ${
-                                getFieldError("collaborators")
-                                  ? "border-red-500 focus:ring-red-500"
-                                  : ""
-                              }`}
+                              className="transition-all"
                             />
-                            {getFieldError("collaborators") && (
-                              <p className="text-sm text-red-500 mt-1">
-                                {getFieldError("collaborators")}
-                              </p>
-                            )}
                           </motion.div>
 
                           <motion.div

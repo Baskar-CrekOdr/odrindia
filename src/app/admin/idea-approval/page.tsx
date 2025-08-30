@@ -60,7 +60,7 @@ interface IdeaSubmission {
   userId: string;
   user: User;
   visibility: "PUBLIC" | "PRIVATE";
-  collaborators: string[];
+  inviteCollaborators: string[];
 }
 
 export default function AdminPage() {
@@ -87,8 +87,6 @@ function AdminIdeaApprovalContent() {
   const [selectedSubmission, setSelectedSubmission] =
     useState<IdeaSubmission | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const users = ["Alice", "Bob", "Charlie", "David", "Alice", "Bob", "Charlie", "David", "Alice", "Bob", "Charlie", "David", "Alice", "Bob", "Charlie", "David"]
-  const [visibility, setVisibility] = useState<"PUBLIC" | "PRIVATE">("PUBLIC");
 
   // Define fetchSubmissions with useCallback before useEffect
   const fetchSubmissions = useCallback(async () => {
@@ -567,10 +565,10 @@ function AdminIdeaApprovalContent() {
                 <div>
                   <h3 className="mb-2 font-semibold text-[#0a1e42] flex items-center gap-1.5 text-lg">
                     <span className="inline-block w-2 h-2 bg-yellow-600 rounded-full"></span>
-                    Collaborators
+                    Invite Collaborators
                   </h3>
                   <div className="rounded-md bg-gray-50 p-4 text-gray-700 shadow-inner">
-                    {selectedSubmission?.collaborators.length > 0 ? selectedSubmission.collaborators.join(", ") : <span className="text-muted-foreground">No collaborators</span>}
+                    {selectedSubmission?.inviteCollaborators.length > 0 ? selectedSubmission.inviteCollaborators.join(", ") : <span className="text-muted-foreground">No collaborators</span>}
                   </div>
                 </div>
 
