@@ -115,7 +115,7 @@ export function MultiSelect({
         </div>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[250px] p-2 space-y-2"
+        className="min-w-[250px] p-2 space-y-2"
         side="bottom"
         align="start"
       >

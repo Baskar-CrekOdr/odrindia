@@ -27,7 +27,7 @@ import { MultiSelect } from "@/components/ui/multiselect";
 type FormDataType = {
   title: string;
   visibility: string;
-  collaborator: string[];
+  collaborators: string[];
   idea_caption: string;
   description: string;
   odr_experience: string;
@@ -62,7 +62,7 @@ export default function SubmitIdeaClientPage() {
   const [formData, setFormData] = useState<FormDataType>({
     title: "",
     visibility: "PUBLIC",
-    collaborator: [],
+    collaborators: [],
     idea_caption: "",
     description: "",
     odr_experience: "",
@@ -104,13 +104,13 @@ export default function SubmitIdeaClientPage() {
   };
   
   const handleMultiSelectChange = (value: string[]) => {
-    setFormData((prev) => ({ ...prev, collaborator: value }));
+    setFormData((prev) => ({ ...prev, collaborators: value }));
 
     // Clear error when user selects a value
-    if (formErrors["collaborator"]) {
+    if (formErrors["collaborators"]) {
       setFormErrors((prev) => {
         const newErrors = { ...prev };
-        delete newErrors["collaborator"];
+        delete newErrors["collaborators"];
         return newErrors;
       });
     }
@@ -163,7 +163,7 @@ export default function SubmitIdeaClientPage() {
       const mappedData = {
         title: formData.title,
         visibility: formData.visibility,
-        collaborator: formData.collaborator,
+        collaborators: formData.collaborators,
         caption: formData.idea_caption, // backend expects 'caption'
         description: formData.description,
         priorOdrExperience: formData.odr_experience, // backend expects 'priorOdrExperience'
@@ -207,7 +207,7 @@ export default function SubmitIdeaClientPage() {
         setFormData({
           title: "",
           visibility: "PUBLIC",
-          collaborator: [],
+          collaborators: [],
           idea_caption: "",
           description: "",
           odr_experience: "",
@@ -235,11 +235,11 @@ export default function SubmitIdeaClientPage() {
   };
 
   useEffect(()=>{
-    if(formErrors["collaborator"] && formData.visibility === "PUBLIC"){
-      // Clear collaborator errors if visibility is public
+    if(formErrors["collaborators"] && formData.visibility === "PUBLIC"){
+      // Clear collaborators errors if visibility is public
       setFormErrors((prev) => {
         const newErrors = { ...prev };
-        delete newErrors["collaborator"];
+        delete newErrors["collaborators"];
         return newErrors;
       });
     }
@@ -445,24 +445,24 @@ export default function SubmitIdeaClientPage() {
                             className="space-y-2 col-span-4 md:col-span-3"
                             variants={fadeInUp}>
                             <Label
-                              htmlFor="collaborator"
+                              htmlFor="collaborators"
                               className="text-sm font-medium">
                               Collaborator {formData.visibility === "private" && <span className="text-red-500">*</span>}
                             </Label>
                             <MultiSelect
                               options={usersList}
-                              value={formData.collaborator}
+                              value={formData.collaborators}
                               onValueChange={handleMultiSelectChange}
                               placeholder="Select Collaborator"
                               className={`transition-all ${
-                                getFieldError("collaborator")
+                                getFieldError("collaborators")
                                   ? "border-red-500 focus:ring-red-500"
                                   : ""
                               }`}
                             />
-                            {getFieldError("collaborator") && (
+                            {getFieldError("collaborators") && (
                               <p className="text-sm text-red-500 mt-1">
-                                {getFieldError("collaborator")}
+                                {getFieldError("collaborators")}
                               </p>
                             )}
                           </motion.div>

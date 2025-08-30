@@ -59,6 +59,8 @@ interface IdeaSubmission {
   createdAt: string;
   userId: string;
   user: User;
+  visibility: "PUBLIC" | "PRIVATE";
+  collaborators: string[];
 }
 
 export default function AdminPage() {
@@ -347,7 +349,7 @@ function AdminIdeaApprovalContent() {
                                     variant="info"
                                     className="bg-blue-50 text-blue-700 border-blue-200 font-medium px-3 py-1">
                                     {
-                                      visibility === 'PUBLIC' ? <div className="flex justify-center items-center gap-1"><Globe className="size-4" /><span>Public</span></div> : <div className="flex justify-center items-center gap-1"><GlobeLock className="size-4" /><span>Private</span></div>
+                                      submission?.visibility === 'PUBLIC' ? <div className="flex justify-center items-center gap-1"><Globe className="size-4" /><span>Public</span></div> : <div className="flex justify-center items-center gap-1"><GlobeLock className="size-4" /><span>Private</span></div>
                                     }
                                   </Badge>
                                 </div>
@@ -533,7 +535,7 @@ function AdminIdeaApprovalContent() {
                   </Badge>
                   <Badge variant="outline" className="bg-white/10 text-white border-white/20 px-2 py-1">
                     {
-                      visibility === 'PUBLIC' ? <div className="flex justify-center items-center gap-1"><Globe className="size-4" /><span>Public</span></div> : <div className="flex justify-center items-center gap-1"><GlobeLock className="size-4" /><span>Private</span></div>
+                      selectedSubmission?.visibility === 'PUBLIC' ? <div className="flex justify-center items-center gap-1"><Globe className="size-4" /><span>Public</span></div> : <div className="flex justify-center items-center gap-1"><GlobeLock className="size-4" /><span>Private</span></div>
                     }
                   </Badge>
                   <Badge variant="outline" className="bg-white/10 text-white border-white/20 px-2 py-1">
@@ -568,7 +570,7 @@ function AdminIdeaApprovalContent() {
                     Collaborators
                   </h3>
                   <div className="rounded-md bg-gray-50 p-4 text-gray-700 shadow-inner">
-                    {users.length > 0 ? users.join(", ") : <span className="text-muted-foreground">No collaborators</span>}
+                    {selectedSubmission?.collaborators.length > 0 ? selectedSubmission.collaborators.join(", ") : <span className="text-muted-foreground">No collaborators</span>}
                   </div>
                 </div>
 
