@@ -22,6 +22,7 @@ type Idea = {
   submittedAt: string
   likes: number
   commentCount: number
+  isIdeaOwner?: boolean // Added property to fix error
 }
 
 interface OdrLabsClientProps {
@@ -47,6 +48,9 @@ export default function OdrLabsClient({ initialIdeas }: OdrLabsClientProps) {
       const oneWeekAgo = new Date()
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
       return matchesSearch && ideaDate > oneWeekAgo
+    }
+    if(filter === "myideas") {
+      return matchesSearch && idea.isIdeaOwner
     }
     
     return matchesSearch
@@ -90,6 +94,7 @@ export default function OdrLabsClient({ initialIdeas }: OdrLabsClientProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Ideas</SelectItem>
+                    <SelectItem value="myideas">My Ideas</SelectItem>
                     <SelectItem value="popular">Most Popular</SelectItem>
                     <SelectItem value="recent">Recently Added</SelectItem>
                   </SelectContent>
