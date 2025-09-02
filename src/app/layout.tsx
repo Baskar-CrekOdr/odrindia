@@ -7,6 +7,7 @@ import GoogleScriptLoader from "@/components/GoogleScriptLoader";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { Toaster } from "sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -29,10 +30,12 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <AuthProvider>
-          <Navbar/>
-          <GoogleScriptLoader />
-          {children}
-          <Footer/>
+          <TooltipProvider delayDuration={0}>
+            <Navbar/>
+            <GoogleScriptLoader />
+            {children}
+            <Footer/>
+          </TooltipProvider>
           <Toaster />
         </AuthProvider>
       </body>

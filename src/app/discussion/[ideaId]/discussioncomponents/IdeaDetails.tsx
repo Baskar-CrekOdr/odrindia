@@ -1,5 +1,5 @@
 "use client";
-import { Globe, GlobeLock, ThumbsUp, User as UserIcon, Users } from "lucide-react";
+import { BookOpen, Globe, GlobeLock, ThumbsUp, User as UserIcon, Users } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import { useEffect, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { updateIdeaDetails } from "./api";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipPortal } from "@radix-ui/react-tooltip";
 
 interface IdeaDetailsProps {
   idea: Idea;
@@ -36,6 +38,7 @@ export default function IdeaDetails({
   const isCollaborator = user ? idea.collaborators.some((c) => c.userId === user.id) : false;
   const isMentor = user ? idea.mentors.some((m) => m.userId === user.id) : false;
   const [collaborators, setCollaborators] = useState<{ id: string; name: string }[]>([]);
+  const [mentors, setMentors] = useState<{ id: string; name: string }[]>([]);
 
   const handleVisibilityChange = async (value: "PUBLIC" | "PRIVATE") => {
     const res = await updateIdeaDetails(idea.id, {  
@@ -56,6 +59,7 @@ export default function IdeaDetails({
       visibility: idea?.visibility || '',
     })
     setCollaborators(idea.collaborators.map(c => ({ id: c.userId, name: c.user?.name || '--' })) || [])
+    setMentors(idea.mentors.map(c => ({ id: c.userId, name: c.user?.name || '--' })) || [])
   },[])
 
   return (
@@ -82,12 +86,19 @@ export default function IdeaDetails({
                   </Select>
                   {
                     collaborators.length > 0 && 
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Users className="size-5 cursor-pointer text-muted-foreground hover:text-foreground" />
-                      </PopoverTrigger>
-
-                      <PopoverContent side="bottom" align="start" className="w-[220px] p-2 space-y-2">
+                    <Tooltip>
+                      <Popover>
+                        <TooltipTrigger asChild>
+                          <PopoverTrigger asChild>
+                            <Users className="size-5 cursor-pointer text-muted-foreground hover:text-foreground" />
+                          </PopoverTrigger>
+                        </TooltipTrigger>
+                        <TooltipPortal>
+                          <TooltipContent>
+                            Click to view Collaborators
+                          </TooltipContent>
+                        </TooltipPortal>
+                        <PopoverContent side="bottom" align="start" className="w-[220px] p-2 space-y-2">
                         <div className="max-h-[200px] overflow-y-auto space-y-2">
                           {Array.isArray(collaborators) && collaborators.map((collaborator) => (
                               <div
@@ -100,7 +111,50 @@ export default function IdeaDetails({
                             ))}
                         </div>
                       </PopoverContent>
-                    </Popover>
+                      </Popover>
+                    </Tooltip>
+                  }
+                  {
+                    mentors.length > 0 && 
+                    <Tooltip>
+                      <Popover>
+                        <TooltipTrigger asChild>
+                          <PopoverTrigger asChild>
+                            <BookOpen className="size-5 cursor-pointer text-muted-foreground hover:text-foreground" />
+                          </PopoverTrigger>
+                        </TooltipTrigger>
+                        <TooltipPortal>
+                          <TooltipContent>
+                            Click to view Mentors
+                          </TooltipContent>
+                        </TooltipPortal>
+                        <PopoverContent
+                          side="bottom"
+                          align="start"
+                          className="w-[220px] p-2 space-y-2 rounded-md shadow-lg bg-white"
+                        >
+                          <div className="max-h-[200px] overflow-y-auto space-y-2">
+                            {Array.isArray(mentors) && mentors.length > 0 ? (
+                              mentors.map((mentor) => (
+                                <div
+                                  key={mentor.id}
+                                  className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                                >
+                                  <UserIcon className="w-4 h-4 text-gray-500" />
+                                  <span className="text-sm font-medium text-gray-800">
+                                    {mentor.name || "--"}
+                                  </span>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-sm text-gray-500 px-3 py-2">
+                                No mentors found
+                              </div>
+                            )}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </Tooltip>
                   }
                 </>
               }
