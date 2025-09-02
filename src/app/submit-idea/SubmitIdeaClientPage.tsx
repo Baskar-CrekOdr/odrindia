@@ -22,12 +22,18 @@ import { saveSubmissionRecord } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
 import { fetchAndStoreCsrfToken } from "@/lib/csrf";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { MultiSelect } from "@/components/ui/multiselect";
+import { SearchSelect } from "@/components/ui/searchselect";
+
+type SelectedOption = {
+  value: string
+  label: string
+  supportLabel?: string
+}
 
 type FormDataType = {
   title: string;
   visibility: string;
-  inviteCollaborators: string[];
+  inviteCollaborators: SelectedOption[];
   idea_caption: string;
   description: string;
   odr_experience: string;
@@ -58,7 +64,6 @@ export default function SubmitIdeaClientPage() {
   const { user, loading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [usersList, setUsersList] = useState([]);
   const [formData, setFormData] = useState<FormDataType>({
     title: "",
     visibility: "PUBLIC",
@@ -103,7 +108,7 @@ export default function SubmitIdeaClientPage() {
     }
   };
   
-  const handleMultiSelectChange = (value: string[]) => {
+  const handleSearchSelectChange = (value: SelectedOption[]) => {
     setFormData((prev) => ({ ...prev, inviteCollaborators: value }));
 
     // Clear error when user selects a value
@@ -163,7 +168,7 @@ export default function SubmitIdeaClientPage() {
       const mappedData = {
         title: formData.title,
         visibility: formData.visibility,
-        inviteCollaborators: formData.inviteCollaborators,
+        inviteCollaborators: Array.isArray(formData.inviteCollaborators) && formData.inviteCollaborators?.length > 0 ? formData.inviteCollaborators.map((u) => u.value) : [], // send array of user IDs
         caption: formData.idea_caption, // backend expects 'caption'
         description: formData.description,
         priorOdrExperience: formData.odr_experience, // backend expects 'priorOdrExperience'
@@ -245,24 +250,6 @@ export default function SubmitIdeaClientPage() {
     }
   },[formData.visibility])
 
-  useEffect(() => {
-    const fetchUsersList = async () => {
-      try {
-        const response = await apiFetch('/user/list');
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `Failed with status: ${response.status}`);
-        }
-        const data = await response.json();
-        setUsersList(data.users || []);
-      } catch (error: any) {
-        console.error('Failed to fetch users list:', error);
-      }
-    };
-    if (user?.id) {
-      fetchUsersList();
-    }
-  }, [user?.id]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -444,12 +431,14 @@ export default function SubmitIdeaClientPage() {
                               className="text-sm font-medium">
                               Invite Collaborators
                             </Label>
-                            <MultiSelect
-                              options={usersList}
+                            <SearchSelect
                               value={formData.inviteCollaborators}
-                              onValueChange={handleMultiSelectChange}
-                              placeholder="Select Collaborator"
-                              className="transition-all"
+                              onValueChange={handleSearchSelectChange}
+                              fetchSuggestions={async (query) => {
+                                const res = await apiFetch(`/user/search?search=${encodeURIComponent(query)}`);
+                                const data = await res.json();
+                                return data.users;
+                              }}
                             />
                           </motion.div>
 
