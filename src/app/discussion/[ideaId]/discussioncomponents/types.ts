@@ -36,6 +36,7 @@ export interface Idea {
   likes: number;
   commentCount: number;
   visibility: "PUBLIC" | "PRIVATE";
+  ideaCollabInviteStatus?: any[];
 }
 
 export interface IdeaCollaborator {

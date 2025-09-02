@@ -24,9 +24,10 @@ import {
 interface DiscussionClientProps {
   idea: Idea
   initialComments: Comment[]
+  setError: (error: string | null) => void
 }
 
-export default function DiscussionClient({ idea: initialIdea, initialComments }: DiscussionClientProps) {
+export default function DiscussionClient({ idea: initialIdea, initialComments, setError }: DiscussionClientProps) {
   const { user } = useAuth()
   const [idea, setIdea] = useState<Idea>(initialIdea)
   const [comments, setComments] = useState<Comment[]>(initialComments)
@@ -82,6 +83,7 @@ export default function DiscussionClient({ idea: initialIdea, initialComments }:
       setIdea(updatedIdea);
     } catch (error) {
       console.error("Failed to refresh idea details:", error);
+      setError(error instanceof Error ? error.message : `Failed to refresh idea details`);
     }
   }
   

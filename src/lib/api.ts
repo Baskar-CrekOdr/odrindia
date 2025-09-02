@@ -65,12 +65,16 @@ export async function apiFetch(path: string, options: ApiOptions = {}) {
         if (typeof window !== 'undefined') {
           // Use session storage clear instead of localStorage to preserve other app data
           window.sessionStorage?.removeItem('userSession');
-          
-          // Redirect to login only if not on a public page
-          const isPublicRoute = /^\/(login|register|$)/.test(window.location.pathname);
+
+          // mark signin/login/register as public
+          const isPublicRoute = /^\/(login|signin|register|$)/.test(window.location.pathname);
+
           if (!isPublicRoute) {
-            // Use history state instead of immediate redirect to prevent interrupting rendering
-            window.history.pushState({}, '', '/login?expired=true');
+            // Build redirect URL with original path
+            let currentPath = window.location.pathname + window.location.search
+            const redirectUrl = `/signin?expired=true&redirect=${encodeURIComponent(currentPath)}`;
+            // Force navigation (not pushState) so app resets cleanly
+            window.location.href = redirectUrl;
           }
         }
         
@@ -79,6 +83,9 @@ export async function apiFetch(path: string, options: ApiOptions = {}) {
       }
 
       if (response.status === 403) {
+        if(response?.statusText === "Forbidden") {
+          throw new Error(`Access forbidden. You don't have permission to access this resource.`);
+        }
         // CSRF failure - try to fetch new token and suggest retry
         console.warn("CSRF token validation failed, attempting to refresh token");
         try {
@@ -100,7 +107,7 @@ export async function apiFetch(path: string, options: ApiOptions = {}) {
 // Add missing refreshTokens function if it doesn't exist elsewhere
 async function refreshTokens(): Promise<boolean> {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
       method: 'POST',
       credentials: 'include',
       headers: {

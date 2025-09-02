@@ -14,6 +14,12 @@ import { updateIdeaDetails } from "./api";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { TooltipPortal } from "@radix-ui/react-tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { apiFetch } from "@/lib/api";
 
 interface IdeaDetailsProps {
   idea: Idea;
@@ -39,6 +45,8 @@ export default function IdeaDetails({
   const isMentor = user ? idea.mentors.some((m) => m.userId === user.id) : false;
   const [collaborators, setCollaborators] = useState<{ id: string; name: string }[]>([]);
   const [mentors, setMentors] = useState<{ id: string; name: string }[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleVisibilityChange = async (value: "PUBLIC" | "PRIVATE") => {
     const res = await updateIdeaDetails(idea.id, {  
@@ -60,7 +68,85 @@ export default function IdeaDetails({
     })
     setCollaborators(idea.collaborators.map(c => ({ id: c.userId, name: c.user?.name || '--' })) || [])
     setMentors(idea.mentors.map(c => ({ id: c.userId, name: c.user?.name || '--' })) || [])
+
+    const inviteFlag = sessionStorage.getItem('invite');
+    if(inviteFlag === 'true') {
+      const collabStatus = idea?.ideaCollabInviteStatus;
+      if (!collabStatus || !Array.isArray(collabStatus)) return;
+      const userInvite = collabStatus.find(
+        (invite: { userId: string; invitestatus: string }) => invite.userId === user?.id
+      );
+      if (userInvite?.invitestatus === 'PENDING') {
+        setIsOpen(true);
+      }
+    }
   },[])
+  
+  const handleJoinCollaboration = async (action?:string) => {
+    if (!user) {
+      toast.error(`Please sign in to ${action? 'accept the collaborator invite.' : 'join as a collaborator.'}`);
+      return;
+    }
+
+    if (isOwner) {
+      toast.error("You are already the owner of this idea.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await apiFetch(`/collaboration/${idea.id}/join-collaborator`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || (action ? `Failed to accept collaboration invite` : `Failed to join as collaborator`));
+      }
+
+      toast.success(
+        action
+          ? `You have accepted the collaborator invite for this idea.`
+          : "You have joined as a collaborator."
+      );
+      
+      onCollaborationUpdated();
+    } catch (error) {
+      console.error(`Error ${action? "accepting" : "joining"} collaboration:`, error);
+      toast.error(error instanceof Error ? error.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLeaveCollaboration = async (action?:string) => {
+    if (!user) return;
+
+    setIsLoading(true);
+    try {
+      const response = await apiFetch(`/collaboration/${idea.id}/leave-collaborator`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || (action ? `Failed to reject collaboration invite` : `Failed to leave collaboration`));
+      }
+
+      toast.success(
+        action
+          ? `You have rejected the collaboration invite for this idea.`
+          : "You have left the collaboration."
+      );
+      
+      onCollaborationUpdated();
+    } catch (error) {
+      console.error(`Error ${action? "rejecting" : "leaving"} collaboration:`, error);
+      toast.error(error instanceof Error ? error.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -188,11 +274,12 @@ export default function IdeaDetails({
 
               <div className="flex items-center gap-2">
                 <JoinCollaborationButton
-                  ideaId={idea.id}
                   user={user}
                   isOwner={isOwner}
                   isCollaborator={isCollaborator}
-                  onJoined={onCollaborationUpdated}
+                  isLoading={isLoading}
+                  handleJoinCollaboration={handleJoinCollaboration}
+                  handleLeaveCollaboration={handleLeaveCollaboration}
                 />
 
                 <RequestMentorButton
@@ -209,6 +296,50 @@ export default function IdeaDetails({
       </Card>
 
       {/* ...existing team card and tabs... */}
+      <Dialog
+        open={isOpen}
+        onOpenChange={setIsOpen}>
+        <DialogContent 
+          className="sm:min-w-xl p-0 overflow-hidden rounded-xl fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" 
+          showCloseIcon = {false}
+          onPointerDownOutside={(event) => {
+            event.preventDefault(); // Prevent closing when clicking outside
+          }}
+        >
+          <>
+            <DialogTitle></DialogTitle>
+            <div className="p-6 space-y-6 max-h-[calc(80vh-150px)] overflow-y-auto">
+              <p className="text-md sm:text-lg lg-text-xl font-medium text-[#0a1e42] text-center whitespace-break-spaces">
+                {user?.name} has invited you to collaborate on their idea. Join the discussion now!
+              </p>
+              <div className="flex w-full flex-col gap-4 sm:flex-row sm:justify-center">
+                <Button
+                  variant="outline"
+                  disabled={isLoading}
+                  onClick={()=>{
+                    setIsOpen(!isOpen)
+                    handleLeaveCollaboration('reject');
+                    sessionStorage.removeItem('invite');
+                  }}
+                  className="border-gray-300">
+                  Reject
+                </Button>
+                <Button
+                  className="bg-[#0a1e42] hover:bg-[#162d5a] shadow-sm"
+                  disabled={isLoading}
+                  onClick={() => {
+                    setIsOpen(!isOpen)
+                    handleJoinCollaboration('accept');
+                    sessionStorage.removeItem('invite');
+                  }}
+                >
+                  Accept
+                </Button>
+              </div>
+            </div>
+          </>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

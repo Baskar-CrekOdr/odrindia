@@ -26,6 +26,29 @@ export async function fetchIdeaDetails(ideaId: string | null, accessToken?: stri
   }
 }
 
+export async function validateCollabInviteLink(inviteId:string): Promise<{ valid: boolean; ideaId?: string; error?: string }> {
+  try {
+    const res = await apiFetch(`/ideas/validate-invite/${inviteId}`, {
+      method: 'GET',
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        return { valid: false, error: 'Authentication required. Please log in.' };
+      }
+      if (res.status === 400) {
+        const errorData = await res.json().catch(() => ({}));
+        return { valid: false, error: errorData.error || 'Invalid invite link' };
+      }
+      return { valid: false, error: 'Failed to validate invite link' };
+    }
+    const data = await res.json();
+    return { valid: true, ideaId: data.ideaId };
+  } catch (error) {
+    console.error('Error validating collaboration invite link:', error);
+    return { valid: false, error: 'Network error while validating invite link' };
+  }
+}
+
 export async function updateIdeaDetails(ideaId: string, data: Partial<Idea>): Promise<Idea> {
   try {
     const res = await apiFetch(`/ideas/${ideaId}`, {

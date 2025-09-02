@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import DiscussionClient from "./DiscussionClient";
-import { fetchIdeaDetails, fetchComments } from "./discussioncomponents/api";
+import { fetchIdeaDetails, fetchComments, validateCollabInviteLink } from "./discussioncomponents/api";
 import { Idea, Comment } from "./discussioncomponents/types";
 
 interface ClientDiscussionWrapperProps {
@@ -38,6 +38,20 @@ export default function ClientDiscussionWrapper({ ideaId }: ClientDiscussionWrap
     // Wait for auth to finish loading, then check if user is authenticated
     if (!authLoading) {
       if (user) {
+        const inviteId = new URLSearchParams(window.location.search).get("invite");
+        if (inviteId) {
+          (async () => {
+            try {
+              const { valid } = await validateCollabInviteLink(inviteId);
+              if (valid) {
+                sessionStorage.setItem("invite", "true");
+              }
+            } finally {
+              // Always clean up URL, even if API fails
+              window.history.replaceState({}, "", window.location.pathname);
+            }
+          })();
+        }
         loadDiscussionData();
       } else {
         setLoading(false);
@@ -77,5 +91,5 @@ export default function ClientDiscussionWrapper({ ideaId }: ClientDiscussionWrap
     return notFound();
   }
 
-  return <DiscussionClient idea={idea} initialComments={comments} />;
+  return <DiscussionClient idea={idea} initialComments={comments} setError={setError}/>;
 }
