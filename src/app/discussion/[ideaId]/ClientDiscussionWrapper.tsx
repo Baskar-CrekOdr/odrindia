@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { notFound } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import DiscussionClient from "./DiscussionClient";
 import { fetchIdeaDetails, fetchComments, validateCollabInviteLink } from "./discussioncomponents/api";
@@ -17,14 +17,14 @@ export default function ClientDiscussionWrapper({ ideaId }: ClientDiscussionWrap
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     async function loadDiscussionData() {
       try {
-        // Fetch idea details and comments - apiFetch handles authentication automatically
         const ideaData = await fetchIdeaDetails(ideaId);
         setIdea(ideaData);
-        
+
         const commentsData = await fetchComments(ideaId);
         setComments(commentsData);
       } catch (error: unknown) {
@@ -35,30 +35,38 @@ export default function ClientDiscussionWrapper({ ideaId }: ClientDiscussionWrap
       }
     }
 
-    // Wait for auth to finish loading, then check if user is authenticated
-    if (!authLoading) {
-      if (user) {
-        const inviteId = new URLSearchParams(window.location.search).get("invite");
-        if (inviteId) {
-          (async () => {
-            try {
-              const { valid } = await validateCollabInviteLink(inviteId);
-              if (valid) {
-                sessionStorage.setItem("invite", "true");
-              }
-            } finally {
-              // Always clean up URL, even if API fails
-              window.history.replaceState({}, "", window.location.pathname);
-            }
-          })();
+    if (authLoading) return; // Don’t run logic until auth is ready
+
+    const inviteId = new URLSearchParams(window.location.search).get("invite");
+
+    (async () => {
+      if (inviteId) {
+        try {
+          const { valid } = await validateCollabInviteLink(inviteId);
+          if (valid) {
+            sessionStorage.setItem("invite", "true");
+          }
+        } finally {
+          window.history.replaceState({}, "", window.location.pathname);
         }
+      }
+
+      if (user) {
         loadDiscussionData();
       } else {
-        setLoading(false);
-        setError("Authentication required to view this discussion");
+        if (inviteId) {
+          const currentPath = window.location.pathname + window.location.search;
+          const redirectUrl = `/signin?expired=true&redirect=${encodeURIComponent(currentPath)}`;
+          router.push(redirectUrl);
+          return;
+        } else {
+          // Only set error if we know auth has finished AND no user
+          setError("Authentication required to view this discussion");
+          setLoading(false);
+        }
       }
-    }
-  }, [ideaId, user, authLoading]);
+    })();
+  }, [ideaId, user, authLoading, router]);
 
   if (loading) {
     return (
