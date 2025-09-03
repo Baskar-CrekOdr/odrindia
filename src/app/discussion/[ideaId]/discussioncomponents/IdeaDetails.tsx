@@ -9,7 +9,6 @@ import JoinCollaborationButton from "./JoinCollaborationButton";
 import RequestMentorButton from "./RequestMentorButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useEffect, useState } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { updateIdeaDetails } from "./api";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -80,7 +79,7 @@ export default function IdeaDetails({
         setIsOpen(true);
       }
     }
-  },[])
+  },[idea])
   
   const handleJoinCollaboration = async (action?:string) => {
     if (!user) {
@@ -173,73 +172,55 @@ export default function IdeaDetails({
                   {
                     collaborators.length > 0 && 
                     <Tooltip>
-                      <Popover>
                         <TooltipTrigger asChild>
-                          <PopoverTrigger asChild>
-                            <Users className="size-5 cursor-pointer text-muted-foreground hover:text-foreground" />
-                          </PopoverTrigger>
+                          <Users className="size-5 cursor-pointer text-muted-foreground hover:text-foreground" />
                         </TooltipTrigger>
                         <TooltipPortal>
-                          <TooltipContent>
-                            Click to view Collaborators
+                          <TooltipContent side="bottom" align="start" className="w-[220px] p-2">
+                            <div className="max-h-[200px] overflow-y-auto space-y-2">
+                              {Array.isArray(collaborators) && collaborators.map((collaborator) => (
+                                  <div
+                                    key={collaborator.id}
+                                    className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                                  >
+                                    <UserIcon className="w-4 h-4 text-gray-500" />
+                                    <span className="text-sm font-medium text-gray-800">{collaborator.name || '--'}</span>
+                                  </div>
+                                ))}
+                            </div>
                           </TooltipContent>
                         </TooltipPortal>
-                        <PopoverContent side="bottom" align="start" className="w-[220px] p-2 space-y-2">
-                        <div className="max-h-[200px] overflow-y-auto space-y-2">
-                          {Array.isArray(collaborators) && collaborators.map((collaborator) => (
-                              <div
-                                key={collaborator.id}
-                                className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
-                              >
-                                <UserIcon className="w-4 h-4 text-gray-500" />
-                                <span className="text-sm font-medium text-gray-800">{collaborator.name || '--'}</span>
-                              </div>
-                            ))}
-                        </div>
-                      </PopoverContent>
-                      </Popover>
                     </Tooltip>
                   }
                   {
                     mentors.length > 0 && 
                     <Tooltip>
-                      <Popover>
                         <TooltipTrigger asChild>
-                          <PopoverTrigger asChild>
                             <BookOpen className="size-5 cursor-pointer text-muted-foreground hover:text-foreground" />
-                          </PopoverTrigger>
                         </TooltipTrigger>
                         <TooltipPortal>
-                          <TooltipContent>
-                            Click to view Mentors
+                          <TooltipContent side="bottom" align="start" className="w-[220px] p-2">
+                            <div className="max-h-[200px] overflow-y-auto space-y-2">
+                              {Array.isArray(mentors) && mentors.length > 0 ? (
+                                mentors.map((mentor) => (
+                                  <div
+                                    key={mentor.id}
+                                    className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                                  >
+                                    <UserIcon className="w-4 h-4 text-gray-500" />
+                                    <span className="text-sm font-medium text-gray-800">
+                                      {mentor.name || "--"}
+                                    </span>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="text-sm text-gray-500 px-3 py-2">
+                                  No mentors found
+                                </div>
+                              )}
+                            </div>
                           </TooltipContent>
                         </TooltipPortal>
-                        <PopoverContent
-                          side="bottom"
-                          align="start"
-                          className="w-[220px] p-2 space-y-2 rounded-md shadow-lg bg-white"
-                        >
-                          <div className="max-h-[200px] overflow-y-auto space-y-2">
-                            {Array.isArray(mentors) && mentors.length > 0 ? (
-                              mentors.map((mentor) => (
-                                <div
-                                  key={mentor.id}
-                                  className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
-                                >
-                                  <UserIcon className="w-4 h-4 text-gray-500" />
-                                  <span className="text-sm font-medium text-gray-800">
-                                    {mentor.name || "--"}
-                                  </span>
-                                </div>
-                              ))
-                            ) : (
-                              <div className="text-sm text-gray-500 px-3 py-2">
-                                No mentors found
-                              </div>
-                            )}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
                     </Tooltip>
                   }
                 </>
